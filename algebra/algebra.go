@@ -1,6 +1,9 @@
 package algebra
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 // OperationType is a minesweeper algebra operation type
 type OperationType int
@@ -45,6 +48,9 @@ type operationExecution func(state GameState, mineProximity MineProximity) (Mine
 func reveal(state GameState, mineProximity MineProximity) (MineProximity, error) {
 	if mineProximity >= 0 && mineProximity <= 7 {
 		return mineProximity, nil
+	}
+	if mineProximity >= -8 && mineProximity <= -1 {
+		return MineProximity(math.Abs(float64(mineProximity)) - 1), nil
 	}
 	return 0, ErrRevealOperationOutOfBounds
 }
