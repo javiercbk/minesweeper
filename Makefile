@@ -26,3 +26,6 @@ lint:
 # outputs the current version
 version:
 	@echo "$(BIN_VERSION)"
+
+test:
+	go test ./...
