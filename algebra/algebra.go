@@ -28,8 +28,12 @@ const (
 	StateWon
 )
 
-// ErrUnknownOperation is returned when the operation does not exist
-var ErrUnknownOperation = errors.New("unknown operation")
+var (
+	// ErrUnknownOperation is returned when the operation does not exist
+	ErrUnknownOperation = errors.New("unknown operation")
+	// ErrRevealOperationOutOfBounds is returned when a reveal operand is out of bounds or unknown
+	ErrRevealOperationOutOfBounds = errors.New("reveal operation out of bounds")
+)
 
 // MineProximity is the mine proximity value of a point in space
 type MineProximity int
@@ -39,7 +43,10 @@ type operationExecution func(state GameState, mineProximity MineProximity) (Mine
 
 // reveal is the operation that reveals a point in the board.
 func reveal(state GameState, mineProximity MineProximity) (MineProximity, error) {
-	return 0, nil
+	if mineProximity >= 0 && mineProximity <= 7 {
+		return mineProximity, nil
+	}
+	return 0, ErrRevealOperationOutOfBounds
 }
 
 // mark is the operation that marks a point in the board as a possible or certain mine.
