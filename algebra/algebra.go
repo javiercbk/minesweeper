@@ -8,9 +8,6 @@ import (
 // OperationType is a minesweeper algebra operation type
 type OperationType int
 
-// GameState is the current state of a game
-type GameState int
-
 const (
 	// OpUnknown is an unknown operation used to identify a void operation
 	OpUnknown = iota
@@ -22,42 +19,45 @@ const (
 	OpCompose
 )
 
-const (
-	// StateOpen is the only state where a game is playable
-	StateOpen GameState = iota
-	// StateLoss is the only state where a game has concluded and it was lost
-	StateLoss
-	// StateWon is the only state where a game has concluded and it was won
-	StateWon
-)
-
 var (
 	// ErrUnknownOperation is returned when the operation does not exist
 	ErrUnknownOperation = errors.New("unknown operation")
-	// ErrRevealOperationOutOfBounds is returned when a reveal operand is out of bounds or unknown
-	ErrRevealOperationOutOfBounds = errors.New("reveal operation out of bounds")
+	// ErrOperationOutOfBounds is returned when an operand is out of bounds or unknown
+	ErrOperationOutOfBounds = errors.New("reveal operation out of bounds")
 )
 
 // MineProximity is the mine proximity value of a point in space
 type MineProximity int
 
 // operationExecution is the behaviour of all the operations of the minesweep algebra
-type operationExecution func(state GameState, mineProximity MineProximity) (MineProximity, error)
+type operationExecution func(mineProximity MineProximity) (MineProximity, error)
 
 // reveal is the operation that reveals a point in the board.
-func reveal(state GameState, mineProximity MineProximity) (MineProximity, error) {
+func reveal(mineProximity MineProximity) (MineProximity, error) {
 	if mineProximity >= 0 && mineProximity <= 7 {
 		return mineProximity, nil
 	}
 	if mineProximity >= -8 && mineProximity <= -1 {
 		return MineProximity(math.Abs(float64(mineProximity)) - 1), nil
 	}
-	return 0, ErrRevealOperationOutOfBounds
+	return 0, ErrOperationOutOfBounds
 }
 
 // mark is the operation that marks a point in the board as a possible or certain mine.
-func mark(state GameState, mineProximity MineProximity) (MineProximity, error) {
-	return 0, nil
+func mark(mineProximity MineProximity) (MineProximity, error) {
+	if mineProximity >= 0 && mineProximity <= 7 {
+		return mineProximity, nil
+	}
+	if mineProximity >= -8 && mineProximity <= -1 {
+		return MineProximity(mineProximity - 10), nil
+	}
+	if mineProximity >= -18 && mineProximity <= -11 {
+		return MineProximity(mineProximity - 10), nil
+	}
+	if mineProximity >= -28 && mineProximity <= -21 {
+		return MineProximity(mineProximity + 20), nil
+	}
+	return 0, ErrOperationOutOfBounds
 }
 
 // Operation is the behaviour of all the operations of the minesweep algebra
@@ -65,7 +65,12 @@ type Operation struct {
 	x      int
 	y      int
 	opType OperationType
-	Exec   operationExecution
+	exec   operationExecution
+}
+
+// Exec executes the operation over a mine proximity
+func (o Operation) Exec(mineProximity MineProximity) (MineProximity, error) {
+	return o.exec(mineProximity)
 }
 
 // NewOperation creates an Operation object
@@ -77,9 +82,9 @@ func NewOperation(opType OperationType, x, y int) (Operation, error) {
 		opType: opType,
 	}
 	if opType == OpReveal {
-		oper.Exec = reveal
+		oper.exec = reveal
 	} else if opType == OpMark {
-		oper.Exec = mark
+		oper.exec = mark
 	} else {
 		err = ErrUnknownOperation
 	}

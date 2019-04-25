@@ -62,10 +62,11 @@ Let:
 - (x, y, GSID) reveal (O, z) / z is -8 => 8 AND game status changes to L (game lost)
 - (x, y, GSID) reveal (W, z) / z => Operation not allowed, game has concluded (game won)
 - (x, y, GSID) reveal (L, z) / z => Operation not allowed, game has concluded (game lost)
+- (x, y, GSID) mark (O, z) / z (E in [0..7]) => z
 - (x, y, GSID) mark (O, z) / z (E in [-8..-1]) => z - 10
 - (x, y, GSID) mark (O, z) / z (E in [-18..-11]) => z - 10
 - (x, y, GSID) mark (O, z) / z (E in [-28..-21]) => z + 20
-- (x, y, GSID) mark (O, z) / z (E not in [-27..0]) => Operation not allowed, cannot mark a field which has already been revealed or marked
+- (x, y, GSID) mark (O, z) / z (E not in [-27..7]) => Operation not allowed, cannot mark a field which has already been revealed or marked
 - (x, y, GSID) mark (W, z) / z => Operation not allowed, game has concluded (game won)
 - (x, y, GSID) mark (L, z) / z => Operation not allowed, game has concluded (game lost)
 - compose(reveal(x1,y1), reveal(x1,y1)) = reveal(x1,y1)
