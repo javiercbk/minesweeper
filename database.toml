@@ -1,0 +1,6 @@
+[psql]
+    dbname = "minesweeper"
+    host   = "localhost"
+    user   = "minesweeper"
+    pass   = "minesweeper"
+    sslmode= "disable"
