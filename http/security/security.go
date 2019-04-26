@@ -26,6 +26,7 @@ type JWTUser struct {
 
 // JWTMiddlewareFactory creates a JWTMiddleware
 func JWTMiddlewareFactory(jwtSecret string) echo.MiddlewareFunc {
+	// TODO: make this middleware respond with the api response format
 	return middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(jwtSecret),
 		ContextKey: contextKey,

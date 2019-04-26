@@ -62,30 +62,17 @@ func NewErrorResponse(c echo.Context, code int, message string) error {
 	return c.JSON(code, resp)
 }
 
+// NewInternalErrorResponse sends an internal server error response
+func NewInternalErrorResponse(c echo.Context, message string) error {
+	return NewErrorResponse(c, http.StatusInternalServerError, message)
+}
+
 // NewNotFoundResponse sends a not found response
 func NewNotFoundResponse(c echo.Context) error {
-	code := http.StatusNotFound
-	resp := ServiceResponse{
-		Status: Status{
-			Error:   false,
-			Code:    code,
-			Message: http.StatusText(http.StatusNotFound),
-			Version: minesweeperVersion,
-		},
-	}
-	return c.JSON(code, resp)
+	return NewErrorResponse(c, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
 // NewBadRequestResponse sends a bad response with a reason
 func NewBadRequestResponse(c echo.Context, message string) error {
-	code := http.StatusBadRequest
-	resp := ServiceResponse{
-		Status: Status{
-			Error:   false,
-			Code:    code,
-			Message: message,
-			Version: minesweeperVersion,
-		},
-	}
-	return c.JSON(code, resp)
+	return NewErrorResponse(c, http.StatusBadRequest, message)
 }

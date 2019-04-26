@@ -1,29 +1,92 @@
 package player
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/javiercbk/minesweeper/http/response"
 	"github.com/javiercbk/minesweeper/http/security"
+	"github.com/javiercbk/minesweeper/models"
 	"github.com/labstack/echo"
+	"github.com/lib/pq"
+	"github.com/volatiletech/sqlboiler/boil"
 )
+
+// uniqueNameConstaintName is the unique name db constraint
+const uniqueNameConstaintName = "idx_players_name"
+
+// BCryptCost is the ammount of iterations applied to bcrypt
+const BCryptCost = 12
+
+// HashPassword hashes a password
+func HashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), BCryptCost)
+	return string(hash[0:]), err
+}
 
 // Handler is a group of handlers within a route.
 type Handler struct {
 	logger *log.Logger
+	db     *sql.DB
 }
 
 // NewHandler creates a handler for the game route
-func NewHandler(logger *log.Logger) *Handler {
+func NewHandler(logger *log.Logger, db *sql.DB) *Handler {
 	return &Handler{
 		logger: logger,
+		db:     db,
 	}
 }
 
 // Routes initializes all the routes with their http handlers
-func (h *Handler) Routes(e *echo.Group) {
-	e.GET("/current", h.RetrieveCurrent)
+func (h *Handler) Routes(e *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
+	e.POST("/", h.Create)
+	e.GET("/current", h.RetrieveCurrent, jwtMiddleware)
+}
+
+type prospectPlayer struct {
+	ID       int64  `json:"id,omitempty"`
+	Name     string `json:"name" validate:"required,gt=0"`
+	Password string `json:"password,omitempty" validate:"required,gt=0"`
+}
+
+// Create is the http handler for player creation
+func (h *Handler) Create(c echo.Context) error {
+	pPlayer := prospectPlayer{}
+	err := c.Bind(&pPlayer)
+	if err != nil {
+		h.logger.Printf("bad request from client %v\n", err)
+		return response.NewBadRequestResponse(c, "name and passwords are required")
+	}
+	hashPassword, err := HashPassword(pPlayer.Password)
+	if err != nil {
+		h.logger.Printf("error hashing password: %v\n", err)
+		return response.NewInternalErrorResponse(c, "error hashing password")
+	}
+	player := &models.Player{
+		Name:     pPlayer.Name,
+		Password: hashPassword,
+	}
+	ctx := c.Request().Context()
+	err = player.Insert(ctx, h.db, boil.Infer())
+	if err != nil {
+		if pgerr, ok := err.(*pq.Error); ok {
+			if pgerr.Constraint == uniqueNameConstaintName {
+				return response.NewErrorResponse(c, http.StatusConflict, fmt.Sprintf("user %s already exists", pPlayer.Name))
+			}
+		} else {
+			h.logger.Printf("error inserting player: %v\n", err)
+			return response.NewInternalErrorResponse(c, "error creating new player")
+		}
+	}
+	pPlayer.ID = player.ID
+	// remove the password before re sending it to the client
+	pPlayer.Password = ""
+	return response.NewSuccessResponse(c, pPlayer)
 }
 
 // RetrieveCurrent is the http handler that retrieves the authenticated user

@@ -30,9 +30,18 @@ type Config struct {
 	JWTSecret string
 }
 
+type customValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *customValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
 // Serve http connections
 func Serve(cnf Config, logger *log.Logger, db *sql.DB) error {
 	router := echo.New()
+	router.Validator = &customValidator{validator: validator.New()}
 	router.Logger.SetLevel(gommonLog.INFO)
 	router.Use(middleware.Recover())
 	router.Use(middleware.Secure())
@@ -89,9 +98,8 @@ func initRoutes(router *echo.Echo, jwtSecret string, logger *log.Logger, db *sql
 	}
 	{
 		playerRouter := apiRouter.Group("/player")
-		playerRouter.Use(jwtMiddleware)
 		playerHandler := player.NewHandler(logger)
-		playerHandler.Routes(playerRouter)
+		playerHandler.Routes(playerRouter, jwtMiddleware)
 	}
 }
 
