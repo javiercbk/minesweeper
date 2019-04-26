@@ -31,7 +31,7 @@ CREATE TABLE games(
     CONSTRAINT fk_games_creator FOREIGN KEY (creator_id) REFERENCES players (id)
 );
 
-CREATE TABLE game_operation(
+CREATE TABLE game_operations(
     id BIGSERIAL NOT NULL PRIMARY KEY,
     game_id BIGINT NOT NULL,
     player_id BIGINT NOT NULL,

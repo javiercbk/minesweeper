@@ -135,6 +135,7 @@ Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 - [x] Analyze and write down the solution specification.
 - [x] Write the database schema
 - [x] Implement the *minesweep algebra* in the backend (GO).
+- [ ] Write the skeleton API (almost done)
 - [ ] Implement the game backend API and benchmark the normalized and denormalized approach.
 - [ ] Implement authentication.
 - [ ] Create a login page in the frontend .
