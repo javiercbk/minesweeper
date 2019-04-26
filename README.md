@@ -40,9 +40,10 @@ The `mine_proximity` value is an integer that describes the state of a point in 
 
 - A positive number means that the state of that point in space is revealed.
 - A negative number means that the state of that point in space is unrevealed.
-- Values from -6 to 6 mean that the point has no mine and the absolute value signals how many mines are next (in any direction) to the point in space.
-- Values -7 and 7 means that there is an unrevealed or revealed mine in that point of space.
-- Values from -10 to -17 means that there is a marked point in space. Marking a point is the same as subtracting 10, thus unmarking it is the same as adding 10.
+- Values from -8 to 6 mean that the point has no mine and the absolute value signals how many mines are next (in any direction) to the point in space.
+- Values -8 and 7 means that there is an unrevealed or revealed mine in that point of space.
+- Values from -11 to -18 means that there is a marked *possible* mine point in space. Marking a point is the same as subtracting 10, thus unmarking it is the same as adding 10.
+- Values from -21 to -28 means that there is a marked mine point in space. Marking a point is the same as subtracting -20, thus unmarking it is the same as adding 20.
 
 With this in mind you can define the *minesweep algebra*:
 
@@ -57,13 +58,15 @@ Let:
 - **U** as the amount of unrevealed points.
 - **z** as the `mine_proximity`.
 - There are only three operations, **reveal**, **mark**, and **compose**.
-- (x, y, GSID) reveal (O, z) / z (E in [-6..6]) => |z| IF U == M then game status changes to W (game won)
-- (x, y, GSID) reveal (O, z) / z is -7 => 7 AND game status changes to L (game lost)
+- (x, y, GSID) reveal (O, z) / z (E in [-7..6]) => |z| IF U == M then game status changes to W (game won)
+- (x, y, GSID) reveal (O, z) / z is -8 => 8 AND game status changes to L (game lost)
 - (x, y, GSID) reveal (W, z) / z => Operation not allowed, game has concluded (game won)
 - (x, y, GSID) reveal (L, z) / z => Operation not allowed, game has concluded (game lost)
-- (x, y, GSID) mark (O, z) / z (E in [-7..0]) => z - 10
-- (x, y, GSID) mark (O, z) / z (E in [-17..-10]) => z + 10
-- (x, y, GSID) mark (O, z) / z (E not in [-7..0]) => Operation not allowed, cannot mark a field which has already been revealed or marked
+- (x, y, GSID) mark (O, z) / z (E in [0..7]) => z
+- (x, y, GSID) mark (O, z) / z (E in [-8..-1]) => z - 10
+- (x, y, GSID) mark (O, z) / z (E in [-18..-11]) => z - 10
+- (x, y, GSID) mark (O, z) / z (E in [-28..-21]) => z + 20
+- (x, y, GSID) mark (O, z) / z (E not in [-27..7]) => Operation not allowed, cannot mark a field which has already been revealed or marked
 - (x, y, GSID) mark (W, z) / z => Operation not allowed, game has concluded (game won)
 - (x, y, GSID) mark (L, z) / z => Operation not allowed, game has concluded (game lost)
 - compose(reveal(x1,y1), reveal(x1,y1)) = reveal(x1,y1)
@@ -131,7 +134,7 @@ Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 
 - [x] Analyze and write down the solution specification.
 - [x] Write the database schema
-- [ ] Implement the *minesweep algebra* in the backend (GO).
+- [x] Implement the *minesweep algebra* in the backend (GO).
 - [ ] Implement the game backend API and benchmark the normalized and denormalized approach.
 - [ ] Implement authentication.
 - [ ] Create a login page in the frontend .
