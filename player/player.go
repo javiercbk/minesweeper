@@ -1,7 +1,9 @@
 package player
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +16,8 @@ import (
 	"github.com/labstack/echo"
 	"github.com/lib/pq"
 	"github.com/volatiletech/sqlboiler/boil"
+
+	extErrors "github.com/pkg/errors"
 )
 
 // uniqueNameConstaintName is the unique name db constraint
@@ -48,7 +52,8 @@ func (h *Handler) Routes(e *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
 	e.GET("/current", h.RetrieveCurrent, jwtMiddleware)
 }
 
-type prospectPlayer struct {
+// ProspectPlayer contain all the information needed to build a player
+type ProspectPlayer struct {
 	ID       int64  `json:"id,omitempty"`
 	Name     string `json:"name" validate:"required,gt=0"`
 	Password string `json:"password,omitempty" validate:"required,gt=0"`
@@ -56,34 +61,17 @@ type prospectPlayer struct {
 
 // Create is the http handler for player creation
 func (h *Handler) Create(c echo.Context) error {
-	pPlayer := prospectPlayer{}
+	pPlayer := ProspectPlayer{}
 	err := c.Bind(&pPlayer)
 	if err != nil {
 		h.logger.Printf("bad request from client %v\n", err)
 		return response.NewBadRequestResponse(c, "name and passwords are required")
 	}
-	hashPassword, err := HashPassword(pPlayer.Password)
-	if err != nil {
-		h.logger.Printf("error hashing password: %v\n", err)
-		return response.NewInternalErrorResponse(c, "error hashing password")
-	}
-	player := &models.Player{
-		Name:     pPlayer.Name,
-		Password: hashPassword,
-	}
 	ctx := c.Request().Context()
-	err = player.Insert(ctx, h.db, boil.Infer())
+	err = h.CreatePlayer(ctx, &pPlayer)
 	if err != nil {
-		if pgerr, ok := err.(*pq.Error); ok {
-			if pgerr.Constraint == uniqueNameConstaintName {
-				return response.NewErrorResponse(c, http.StatusConflict, fmt.Sprintf("user %s already exists", pPlayer.Name))
-			}
-		} else {
-			h.logger.Printf("error inserting player: %v\n", err)
-			return response.NewInternalErrorResponse(c, "error creating new player")
-		}
+		return response.NewResponseFromError(c, err)
 	}
-	pPlayer.ID = player.ID
 	// remove the password before re sending it to the client
 	pPlayer.Password = ""
 	return response.NewSuccessResponse(c, pPlayer)
@@ -97,4 +85,36 @@ func (h *Handler) RetrieveCurrent(c echo.Context) error {
 		return response.NewErrorResponse(c, http.StatusForbidden, "authentication token was not found")
 	}
 	return response.NewSuccessResponse(c, user)
+}
+
+// end of http handlers
+
+// CreatePlayer creates a player in the database
+func (h *Handler) CreatePlayer(ctx context.Context, pPlayer *ProspectPlayer) error {
+	hashPassword, err := HashPassword(pPlayer.Password)
+	if err != nil {
+		h.logger.Printf("error hashing password: %v\n", err)
+		return errors.New("error hashing password")
+	}
+	player := &models.Player{
+		Name:     pPlayer.Name,
+		Password: hashPassword,
+	}
+	err = player.Insert(ctx, h.db, boil.Infer())
+	if err != nil {
+		cause := extErrors.Cause(err)
+		if pgerr, ok := cause.(*pq.Error); ok {
+			if pgerr.Constraint == uniqueNameConstaintName {
+				return response.HTTPError{
+					Code:    http.StatusConflict,
+					Message: fmt.Sprintf("player %s already exists", pPlayer.Name),
+				}
+			}
+		} else {
+			h.logger.Printf("error inserting player: %v\n", err)
+			return errors.New("error inserting player")
+		}
+	}
+	pPlayer.ID = player.ID
+	return nil
 }

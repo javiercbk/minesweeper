@@ -17,6 +17,8 @@ import (
 	"github.com/javiercbk/minesweeper/http/security"
 	"github.com/javiercbk/minesweeper/player"
 
+	"gopkg.in/go-playground/validator.v9"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	gommonLog "github.com/labstack/gommon/log"
@@ -98,7 +100,7 @@ func initRoutes(router *echo.Echo, jwtSecret string, logger *log.Logger, db *sql
 	}
 	{
 		playerRouter := apiRouter.Group("/player")
-		playerHandler := player.NewHandler(logger)
+		playerHandler := player.NewHandler(logger, db)
 		playerHandler.Routes(playerRouter, jwtMiddleware)
 	}
 }

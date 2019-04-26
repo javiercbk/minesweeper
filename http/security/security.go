@@ -36,8 +36,8 @@ func JWTMiddlewareFactory(jwtSecret string) echo.MiddlewareFunc {
 // JWTEncode encodes a user into a jwt.MapClaims
 func JWTEncode(user JWTUser, d time.Duration) jwt.MapClaims {
 	claims := jwt.MapClaims{}
-	claims[userID] = 1
-	claims[userName] = "username"
+	claims[userID] = user.ID
+	claims[userName] = user.Name
 	// session lasts only 20 minutes
 	claims["exp"] = time.Now().Add(d).Unix()
 	return claims

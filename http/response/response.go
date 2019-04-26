@@ -11,6 +11,28 @@ const successMessage = "success"
 // filled by compiler flag -X http.response.minesweeperVersion=value
 var minesweeperVersion string
 
+// HTTPError is an error with an HTTP code
+type HTTPError struct {
+	Code    int
+	Message string
+}
+
+// Error returns the error message of an HTTPError
+func (e HTTPError) Error() string {
+	if e.Message == "" {
+		return http.StatusText(e.Code)
+	}
+	return e.Message
+}
+
+// NewHTTPError extracts an HTTP error code and a message from an error
+func NewHTTPError(err error) (int, string) {
+	if httpError, ok := err.(HTTPError); ok {
+		return httpError.Code, httpError.Error()
+	}
+	return http.StatusInternalServerError, err.Error()
+}
+
 // Status is the status of the response
 type Status struct {
 	Error   bool   `json:"error"`
@@ -75,4 +97,10 @@ func NewNotFoundResponse(c echo.Context) error {
 // NewBadRequestResponse sends a bad response with a reason
 func NewBadRequestResponse(c echo.Context, message string) error {
 	return NewErrorResponse(c, http.StatusBadRequest, message)
+}
+
+// NewResponseFromError sends an error response from an Error
+func NewResponseFromError(c echo.Context, err error) error {
+	code, message := NewHTTPError(err)
+	return NewErrorResponse(c, code, message)
 }
