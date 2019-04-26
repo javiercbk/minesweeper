@@ -18,7 +18,7 @@ CREATE TABLE games(
     private BOOLEAN DEFAULT FALSE,
     board_x_size SMALLINT NOT NULL,
     board_y_size SMALLINT NOT NULL,
-    map [][] SMALLINT,
+    map SMALLINT[][],
     mines SMALLINT,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
@@ -41,7 +41,7 @@ CREATE TABLE game_operations(
     CONSTRAINT fk_games_creator FOREIGN KEY (player_id) REFERENCES players (id)
 );
 
-CREATE UNIQUE INDEX idx_game_operation ON players (game_id, operation_id);
+CREATE UNIQUE INDEX idx_game_operation ON game_operations (game_id, operation_id);
 
 CREATE TABLE game_board_points(
     id BIGSERIAL NOT NULL PRIMARY KEY,
@@ -54,3 +54,6 @@ CREATE TABLE game_board_points(
     CONSTRAINT cnst_games_map_x_y CHECK (x > 0 AND y > 0 AND x <= 100 AND y <= 100),
     CONSTRAINT fk_games_map_game FOREIGN KEY (game_id) REFERENCES games (id)
 );
+
+CREATE UNIQUE INDEX idx_game_board ON game_board_points (game_id, x, y);
+CREATE INDEX idx_game_board_mine_proximity ON game_board_points (game_id, mine_proximity);
