@@ -135,10 +135,10 @@ Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 - [x] Analyze and write down the solution specification.
 - [x] Write the database schema
 - [x] Implement the *minesweep algebra* in the backend (GO).
-- [ ] Write the skeleton API (almost done)
+- [x] Write the skeleton API
+- [x] Implement authentication.
 - [ ] Implement the game backend API and benchmark the normalized and denormalized approach.
-- [ ] Implement authentication.
-- [ ] Create a login page in the frontend .
+- [ ] Create a login page in the frontend.
 - [ ] Implement the *minesweep algebra* in javascript.
 - [ ] Implement a client for the backend API.
 - [ ] Create the game board in the frontend using the client backend API.
