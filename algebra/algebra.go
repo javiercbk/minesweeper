@@ -34,10 +34,10 @@ type operationExecution func(mineProximity MineProximity) (MineProximity, error)
 
 // reveal is the operation that reveals a point in the board.
 func reveal(mineProximity MineProximity) (MineProximity, error) {
-	if mineProximity >= 0 && mineProximity <= 7 {
+	if mineProximity >= 0 && mineProximity <= 8 {
 		return mineProximity, nil
 	}
-	if mineProximity >= -8 && mineProximity <= -1 {
+	if mineProximity >= -10 && mineProximity <= -1 {
 		return MineProximity(math.Abs(float64(mineProximity)) - 1), nil
 	}
 	return 0, ErrOperationOutOfBounds
@@ -45,16 +45,16 @@ func reveal(mineProximity MineProximity) (MineProximity, error) {
 
 // mark is the operation that marks a point in the board as a possible or certain mine.
 func mark(mineProximity MineProximity) (MineProximity, error) {
-	if mineProximity >= 0 && mineProximity <= 7 {
+	if mineProximity >= 0 && mineProximity <= 8 {
 		return mineProximity, nil
 	}
-	if mineProximity >= -8 && mineProximity <= -1 {
+	if mineProximity >= -10 && mineProximity <= -1 {
 		return MineProximity(mineProximity - 10), nil
 	}
-	if mineProximity >= -18 && mineProximity <= -11 {
+	if mineProximity >= -20 && mineProximity <= -11 {
 		return MineProximity(mineProximity - 10), nil
 	}
-	if mineProximity >= -28 && mineProximity <= -21 {
+	if mineProximity >= -30 && mineProximity <= -21 {
 		return MineProximity(mineProximity + 20), nil
 	}
 	return 0, ErrOperationOutOfBounds
