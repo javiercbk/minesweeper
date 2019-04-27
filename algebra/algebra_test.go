@@ -65,6 +65,12 @@ func TestReveal(t *testing.T) {
 		{
 			oper:      reveal,
 			proximity: MineProximity(8),
+			expected:  MineProximity(8),
+			err:       nil,
+		},
+		{
+			oper:      reveal,
+			proximity: MineProximity(9),
 			expected:  MineProximity(0),
 			err:       ErrOperationOutOfBounds,
 		},
@@ -119,6 +125,18 @@ func TestReveal(t *testing.T) {
 		{
 			oper:      reveal,
 			proximity: MineProximity(-9),
+			expected:  MineProximity(8),
+			err:       nil,
+		},
+		{
+			oper:      reveal,
+			proximity: MineProximity(-10),
+			expected:  MineProximity(9),
+			err:       nil,
+		},
+		{
+			oper:      reveal,
+			proximity: MineProximity(-11),
 			expected:  MineProximity(0),
 			err:       ErrOperationOutOfBounds,
 		},
@@ -187,6 +205,18 @@ func TestMark(t *testing.T) {
 		{
 			oper:      mark,
 			proximity: MineProximity(8),
+			expected:  MineProximity(8),
+			err:       nil,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(9),
+			expected:  MineProximity(0),
+			err:       ErrOperationOutOfBounds,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(10),
 			expected:  MineProximity(0),
 			err:       ErrOperationOutOfBounds,
 		},
@@ -241,8 +271,14 @@ func TestMark(t *testing.T) {
 		{
 			oper:      mark,
 			proximity: MineProximity(-9),
-			expected:  MineProximity(0),
-			err:       ErrOperationOutOfBounds,
+			expected:  MineProximity(-19),
+			err:       nil,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(-10),
+			expected:  MineProximity(-20),
+			err:       nil,
 		},
 		{
 			oper:      mark,
@@ -295,8 +331,14 @@ func TestMark(t *testing.T) {
 		{
 			oper:      mark,
 			proximity: MineProximity(-19),
-			expected:  MineProximity(0),
-			err:       ErrOperationOutOfBounds,
+			expected:  MineProximity(-29),
+			err:       nil,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(-20),
+			expected:  MineProximity(-30),
+			err:       nil,
 		},
 		{
 			oper:      mark,
@@ -349,6 +391,18 @@ func TestMark(t *testing.T) {
 		{
 			oper:      mark,
 			proximity: MineProximity(-29),
+			expected:  MineProximity(-9),
+			err:       nil,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(-30),
+			expected:  MineProximity(-10),
+			err:       nil,
+		},
+		{
+			oper:      mark,
+			proximity: MineProximity(-31),
 			expected:  MineProximity(0),
 			err:       ErrOperationOutOfBounds,
 		},

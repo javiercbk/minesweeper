@@ -23,6 +23,9 @@ mod-tydy:
 lint:
 	~/go/bin/golangci-lint run
 
+server: lint
+	go build -tags=jsoniter -ldflags "-X http.response.minesweeperVersion=$(BIN_VERSION)" cmd/server/server.go
+
 # outputs the current version
 version:
 	@echo "$(BIN_VERSION)"

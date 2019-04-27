@@ -125,6 +125,10 @@ func InitializeDB(m *testing.M) {
 		}
 		// create the schema
 		log.Printf("initializing database\n")
+		_, err = db.Exec("CREATE DATABASE minesweeper_test WITH OWNER 'minesweeper' ENCODING 'UTF8'")
+		if err != nil && err.Error() != "pq: database \"minesweeper_test\" already exists" {
+			return err
+		}
 		_, err = db.Exec(schemaSQL)
 		return err
 	})
