@@ -66,8 +66,12 @@ func (h *Handler) AuthenticateFactory(jwtSecret string) echo.HandlerFunc {
 		auth := Credentials{}
 		err := c.Bind(&auth)
 		if err != nil {
-			h.logger.Printf("bad request from client %v\n", err)
+			h.logger.Printf("could not bind request data%v\n", err)
 			return response.NewBadRequestResponse(c, "name and passwords are required")
+		}
+		if err = c.Validate(auth); err != nil {
+			h.logger.Printf("validation error %v\n", err)
+			return response.NewBadRequestResponse(c, err.Error())
 		}
 		tResponse, err := h.CreateToken(ctx, jwtSecret, auth)
 		if err != nil {

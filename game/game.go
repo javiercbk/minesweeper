@@ -1,16 +1,23 @@
 package game
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/javiercbk/minesweeper/http/response"
+	"github.com/javiercbk/minesweeper/http/security"
+	"github.com/javiercbk/minesweeper/models"
 	"github.com/labstack/echo"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 // ErrInvalidRowCols is returned when given a zero or negative row or column count
@@ -60,9 +67,43 @@ func (h *Handler) Retrieve(c echo.Context) error {
 	return response.NewNotFoundResponse(c)
 }
 
+// ProspectGame contains all the information needed to build a new game
+type ProspectGame struct {
+	ID      int64 `json:"id"`
+	Rows    int   `json:"rows" validate:"required,gt=0,lte=100"`
+	Cols    int   `json:"cols" validate:"required,gt=0,lte=100"`
+	Mines   int   `json:"mines" validate:"required,gt=0,lte=100"`
+	Private bool  `json:"private" validate:"required"`
+}
+
 // Create is the http handler that creates a game
 func (h *Handler) Create(c echo.Context) error {
-	return response.NewNotFoundResponse(c)
+	user, err := security.JWTDecode(c)
+	if err == security.ErrUserNotFound {
+		h.logger.Printf("error finding jwt token in context: %v\n", err)
+		return response.NewErrorResponse(c, http.StatusForbidden, "authentication token was not found")
+	}
+	pGame := ProspectGame{}
+	err = c.Bind(&pGame)
+	if err != nil {
+		h.logger.Printf("could not bind request data%v\n", err)
+		return response.NewBadRequestResponse(c, "rows, cols, mines and private are required")
+	}
+	if err = c.Validate(pGame); err != nil {
+		h.logger.Printf("validation error %v\n", err)
+		return response.NewBadRequestResponse(c, err.Error())
+	}
+	pointsCount := pGame.Rows * pGame.Cols
+	if pointsCount <= pGame.Mines {
+		h.logger.Printf("validation error too many mines\n")
+		return response.NewBadRequestResponse(c, "too many mines")
+	}
+	ctx := c.Request().Context()
+	err = h.CreateGame(ctx, user, &pGame, h.ArrayStorageStrategy)
+	if err != nil {
+		return response.NewResponseFromError(c, err)
+	}
+	return response.NewSuccessResponse(c, pGame)
 }
 
 // end of http handlers
@@ -77,6 +118,92 @@ type board struct {
 	cols  int
 	mines int
 	board [][]int
+}
+
+type boardStorageStrategy func(context.Context, security.JWTUser, *models.Game) error
+
+// board storage strategy to benchmark
+
+// ArrayStorageStrategy stores a Game board as an array inside the game
+func (h *Handler) ArrayStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+	return game.Insert(ctx, h.db, boil.Infer())
+}
+
+// TableStorageStrategy stores a Game board in another table
+func (h *Handler) TableStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+	flatBoard := game.Map
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		h.logger.Printf("error beggining transaction: %v\n", err)
+		return err
+	}
+	// do not insert map
+	err = game.Insert(ctx, tx, boil.Whitelist("private", "cols", "rows", "mines", "creator_id"))
+	if err != nil {
+		h.logger.Printf("error inserting game: %v. Rolling back game insertion\n", err)
+		// just log rollback error
+		rollbackError := tx.Rollback()
+		if rollbackError != nil {
+			h.logger.Printf("error rolling back game creation with error: %v\n", rollbackError)
+		}
+		return err
+	}
+	for i := range flatBoard {
+		row, col := arrayToBoardPoint(i, int(game.Cols))
+		gbPoint := &models.GameBoardPoint{
+			GameID:        game.ID,
+			Row:           int16(row),
+			Col:           int16(col),
+			MineProximity: int16(flatBoard[i]),
+		}
+		err = gbPoint.Insert(ctx, tx, boil.Infer())
+		if err != nil {
+			h.logger.Printf("error inserting game board point: %v. Rolling back operation\n", err)
+			// just log rollback error
+			rollbackError := tx.Rollback()
+			if rollbackError != nil {
+				h.logger.Printf("error rolling back game board point creation with error: %v\n", rollbackError)
+			}
+			return err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		h.logger.Printf("error commiting transaction: %v. Rolling back operation\n", err)
+		// just log rollback error
+		rollbackError := tx.Rollback()
+		if rollbackError != nil {
+			h.logger.Printf("error rolling back operation with error: %v\n", rollbackError)
+		}
+		return err
+	}
+	return nil
+}
+
+// CreateGame creates a random board game and stores a new game in the database
+func (h *Handler) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame, storageStrategy boardStorageStrategy) error {
+	board, err := NewBoard(pGame.Rows, pGame.Cols, pGame.Mines)
+	if err != nil {
+		return response.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}
+	}
+	dbBoard := toDBBoard(pGame.Rows, pGame.Cols, board)
+	game := &models.Game{
+		Rows:      int16(pGame.Rows),
+		Cols:      int16(pGame.Cols),
+		Mines:     null.Int16From(int16(pGame.Mines)),
+		CreatorID: user.ID,
+		Private:   pGame.Private,
+		Map:       dbBoard,
+	}
+	err = storageStrategy(ctx, user, game)
+	if err != nil {
+		return err
+	}
+	pGame.ID = game.ID
+	return nil
 }
 
 // NewBoard creates a random minesweeper board
@@ -161,9 +288,23 @@ func (b *board) siblingPoints(row, col int) []boardPoint {
 	return points
 }
 
-// CreateBoard creates a new minesweeper board
-func CreateBoard(rows, cols, mines int) ([][]int, error) {
-	var board [][]int
+func toDBBoard(rows, cols int, board [][]int) types.Int64Array {
+	dbBoard := make(types.Int64Array, rows*cols)
+	for i := range board {
+		for j := range board[i] {
+			index := boardToArrayPoint(i, j, cols)
+			dbBoard[index] = int64(board[i][j])
+		}
+	}
+	return dbBoard
+}
 
-	return board, nil
+func boardToArrayPoint(row, col, colLength int) int {
+	return (row * colLength) + col
+}
+
+func arrayToBoardPoint(index, colLength int) (int, int) {
+	row := int(index / colLength)
+	col := index - (row * colLength)
+	return row, col
 }

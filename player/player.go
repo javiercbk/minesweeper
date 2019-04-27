@@ -64,8 +64,12 @@ func (h *Handler) Create(c echo.Context) error {
 	pPlayer := ProspectPlayer{}
 	err := c.Bind(&pPlayer)
 	if err != nil {
-		h.logger.Printf("bad request from client %v\n", err)
+		h.logger.Printf("could not bind request data%v\n", err)
 		return response.NewBadRequestResponse(c, "name and passwords are required")
+	}
+	if err = c.Validate(pPlayer); err != nil {
+		h.logger.Printf("validation error %v\n", err)
+		return response.NewBadRequestResponse(c, err.Error())
 	}
 	ctx := c.Request().Context()
 	err = h.CreatePlayer(ctx, &pPlayer)

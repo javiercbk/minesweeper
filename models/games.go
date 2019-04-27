@@ -26,9 +26,9 @@ import (
 // Game is an object representing the database table.
 type Game struct {
 	ID         int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Private    null.Bool        `boil:"private" json:"private,omitempty" toml:"private" yaml:"private,omitempty"`
-	BoardXSize int16            `boil:"board_x_size" json:"boardXSize" toml:"boardXSize" yaml:"boardXSize"`
-	BoardYSize int16            `boil:"board_y_size" json:"boardYSize" toml:"boardYSize" yaml:"boardYSize"`
+	Private    bool             `boil:"private" json:"private" toml:"private" yaml:"private"`
+	Cols       int16            `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
+	Rows       int16            `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
 	Map        types.Int64Array `boil:"map" json:"map,omitempty" toml:"map" yaml:"map,omitempty"`
 	Mines      null.Int16       `boil:"mines" json:"mines,omitempty" toml:"mines" yaml:"mines,omitempty"`
 	StartedAt  null.Time        `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
@@ -44,8 +44,8 @@ type Game struct {
 var GameColumns = struct {
 	ID         string
 	Private    string
-	BoardXSize string
-	BoardYSize string
+	Cols       string
+	Rows       string
 	Map        string
 	Mines      string
 	StartedAt  string
@@ -57,8 +57,8 @@ var GameColumns = struct {
 }{
 	ID:         "id",
 	Private:    "private",
-	BoardXSize: "board_x_size",
-	BoardYSize: "board_y_size",
+	Cols:       "cols",
+	Rows:       "rows",
 	Map:        "map",
 	Mines:      "mines",
 	StartedAt:  "started_at",
@@ -71,28 +71,14 @@ var GameColumns = struct {
 
 // Generated where
 
-type whereHelpernull_Bool struct{ field string }
+type whereHelperbool struct{ field string }
 
-func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelpertypes_Int64Array struct{ field string }
 
@@ -140,11 +126,34 @@ func (w whereHelpernull_Int16) GTE(x null.Int16) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_Bool struct{ field string }
+
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var GameWhere = struct {
 	ID         whereHelperint64
-	Private    whereHelpernull_Bool
-	BoardXSize whereHelperint16
-	BoardYSize whereHelperint16
+	Private    whereHelperbool
+	Cols       whereHelperint16
+	Rows       whereHelperint16
 	Map        whereHelpertypes_Int64Array
 	Mines      whereHelpernull_Int16
 	StartedAt  whereHelpernull_Time
@@ -155,9 +164,9 @@ var GameWhere = struct {
 	UpdatedAt  whereHelpernull_Time
 }{
 	ID:         whereHelperint64{field: `id`},
-	Private:    whereHelpernull_Bool{field: `private`},
-	BoardXSize: whereHelperint16{field: `board_x_size`},
-	BoardYSize: whereHelperint16{field: `board_y_size`},
+	Private:    whereHelperbool{field: `private`},
+	Cols:       whereHelperint16{field: `cols`},
+	Rows:       whereHelperint16{field: `rows`},
 	Map:        whereHelpertypes_Int64Array{field: `map`},
 	Mines:      whereHelpernull_Int16{field: `mines`},
 	StartedAt:  whereHelpernull_Time{field: `started_at`},
@@ -195,8 +204,8 @@ func (*gameR) NewStruct() *gameR {
 type gameL struct{}
 
 var (
-	gameColumns               = []string{"id", "private", "board_x_size", "board_y_size", "map", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
-	gameColumnsWithoutDefault = []string{"board_x_size", "board_y_size", "map", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
+	gameColumns               = []string{"id", "private", "cols", "rows", "map", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
+	gameColumnsWithoutDefault = []string{"cols", "rows", "map", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
 	gameColumnsWithDefault    = []string{"id", "private", "won"}
 	gamePrimaryKeyColumns     = []string{"id"}
 )
