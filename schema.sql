@@ -18,7 +18,6 @@ CREATE TABLE games(
     private BOOLEAN NOT NULL DEFAULT FALSE,
     rows SMALLINT NOT NULL,
     cols SMALLINT NOT NULL,
-    map SMALLINT[],
     mines SMALLINT,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
@@ -30,8 +29,6 @@ CREATE TABLE games(
     CONSTRAINT cnst_games_mines CHECK (mines > 0 AND (rows * cols) - 1 > mines),
     CONSTRAINT fk_games_creator FOREIGN KEY (creator_id) REFERENCES players (id)
 );
-
-CREATE INDEX idx_game_map on games USING GIN (map);
 
 CREATE TABLE game_operations(
     id BIGSERIAL NOT NULL PRIMARY KEY,

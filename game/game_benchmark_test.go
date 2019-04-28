@@ -58,8 +58,8 @@ func setUp(ctx context.Context, t testing.TB, name string) (*Handler, security.J
 	}
 }
 
-// 10000	   3775875 ns/op	  546135 B/op	     281 allocs/op
-func BenchmarkArrayStorage(b *testing.B) {
+// 10	 198611863 ns/op	 3883188 B/op	   50122 allocs/op
+func BenchmarkCreateGame(b *testing.B) {
 	ctx := context.Background()
 	handler, user := setUp(ctx, b, username)
 	pGame := ProspectGame{
@@ -71,56 +71,9 @@ func BenchmarkArrayStorage(b *testing.B) {
 	// do not count first insertion time
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		err := handler.CreateGame(ctx, user, &pGame, handler.arrayStorageStrategy)
+		err := handler.CreateGame(ctx, user, &pGame)
 		if err != nil {
 			b.Fatalf("error creating game %v\n", err)
-		}
-	}
-}
-
-// 10	 190661383 ns/op	 3972940 B/op	   50126 allocs/op
-func BenchmarkTableStorage(b *testing.B) {
-	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
-	pGame := ProspectGame{
-		Rows:    gameRows,
-		Cols:    gameCols,
-		Mines:   gameMines,
-		Private: false,
-	}
-	// do not count first insertion time
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		err := handler.CreateGame(ctx, user, &pGame, handler.tableStorageStrategy)
-		if err != nil {
-			b.Fatalf("error creating game %v\n", err)
-		}
-	}
-}
-
-// 1000	   2034873 ns/op	 1227521 B/op	   10101 allocs/op
-func BenchmarkArrayRowColRetrieval(b *testing.B) {
-	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
-	pGame := ProspectGame{
-		Rows:    gameRows,
-		Cols:    gameCols,
-		Mines:   gameMines,
-		Private: false,
-	}
-	err := handler.CreateGame(ctx, user, &pGame, handler.arrayStorageStrategy)
-	if err != nil {
-		b.Fatalf("error creating game %v\n", err)
-	}
-	random := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-	// do not count first insertion time
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		randomRow := random.Intn(gameRows - 1)
-		randomCol := random.Intn(gameCols - 1)
-		_, err = handler.arrayRowColRetrieval(ctx, user, pGame.ID, randomRow, randomCol)
-		if err != nil {
-			b.Fatalf("error retrieving row col %v\n", err)
 		}
 	}
 }
@@ -135,7 +88,7 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 		Mines:   gameMines,
 		Private: false,
 	}
-	err := handler.CreateGame(ctx, user, &pGame, handler.tableStorageStrategy)
+	err := handler.CreateGame(ctx, user, &pGame)
 	if err != nil {
 		b.Fatalf("error creating game %v\n", err)
 	}
@@ -152,33 +105,6 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 	}
 }
 
-// 300	   4154761 ns/op	 1226859 B/op	    9955 allocs/op
-func BenchmarkArrayRowColUpdate(b *testing.B) {
-	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
-	pGame := ProspectGame{
-		Rows:    gameRows,
-		Cols:    gameCols,
-		Mines:   gameMines,
-		Private: false,
-	}
-	err := handler.CreateGame(ctx, user, &pGame, handler.arrayStorageStrategy)
-	if err != nil {
-		b.Fatalf("error creating game %v\n", err)
-	}
-	random := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-	// do not count first insertion time
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		randomRow := random.Intn(gameRows - 1)
-		randomCol := random.Intn(gameCols - 1)
-		err = handler.arrayUpdateRowCol(ctx, user, pGame.ID, randomRow, randomCol, 0)
-		if err != nil {
-			b.Fatalf("error updating row col %v\n", err)
-		}
-	}
-}
-
 // 1000	   1636261 ns/op	    2326 B/op	      54 allocs/op
 func BenchmarkTableRowColUpdate(b *testing.B) {
 	ctx := context.Background()
@@ -189,7 +115,7 @@ func BenchmarkTableRowColUpdate(b *testing.B) {
 		Mines:   gameMines,
 		Private: false,
 	}
-	err := handler.CreateGame(ctx, user, &pGame, handler.tableStorageStrategy)
+	err := handler.CreateGame(ctx, user, &pGame)
 	if err != nil {
 		b.Fatalf("error creating game %v\n", err)
 	}

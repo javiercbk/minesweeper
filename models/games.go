@@ -20,25 +20,23 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // Game is an object representing the database table.
 type Game struct {
-	ID         int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Private    bool             `boil:"private" json:"private" toml:"private" yaml:"private"`
-	Cols       int16            `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
-	Rows       int16            `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
-	Map        types.Int64Array `boil:"map" json:"map,omitempty" toml:"map" yaml:"map,omitempty"`
-	Mines      null.Int16       `boil:"mines" json:"mines,omitempty" toml:"mines" yaml:"mines,omitempty"`
-	StartedAt  null.Time        `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
-	FinishedAt null.Time        `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
-	Won        null.Bool        `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
-	CreatorID  int64            `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
-	CreatedAt  null.Time        `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
-	UpdatedAt  null.Time        `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
-	R          *gameR           `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L          gameL            `boil:"-" json:"-" toml:"-" yaml:"-"`
+	ID         int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Private    bool       `boil:"private" json:"private" toml:"private" yaml:"private"`
+	Cols       int16      `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
+	Rows       int16      `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
+	Mines      null.Int16 `boil:"mines" json:"mines,omitempty" toml:"mines" yaml:"mines,omitempty"`
+	StartedAt  null.Time  `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
+	FinishedAt null.Time  `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
+	Won        null.Bool  `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
+	CreatorID  int64      `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
+	CreatedAt  null.Time  `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt  null.Time  `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
+	R          *gameR     `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L          gameL      `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GameColumns = struct {
@@ -46,7 +44,6 @@ var GameColumns = struct {
 	Private    string
 	Cols       string
 	Rows       string
-	Map        string
 	Mines      string
 	StartedAt  string
 	FinishedAt string
@@ -59,7 +56,6 @@ var GameColumns = struct {
 	Private:    "private",
 	Cols:       "cols",
 	Rows:       "rows",
-	Map:        "map",
 	Mines:      "mines",
 	StartedAt:  "started_at",
 	FinishedAt: "finished_at",
@@ -79,29 +75,6 @@ func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field
 func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
 func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
-type whereHelpertypes_Int64Array struct{ field string }
-
-func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
 
 type whereHelpernull_Int16 struct{ field string }
 
@@ -154,7 +127,6 @@ var GameWhere = struct {
 	Private    whereHelperbool
 	Cols       whereHelperint16
 	Rows       whereHelperint16
-	Map        whereHelpertypes_Int64Array
 	Mines      whereHelpernull_Int16
 	StartedAt  whereHelpernull_Time
 	FinishedAt whereHelpernull_Time
@@ -167,7 +139,6 @@ var GameWhere = struct {
 	Private:    whereHelperbool{field: `private`},
 	Cols:       whereHelperint16{field: `cols`},
 	Rows:       whereHelperint16{field: `rows`},
-	Map:        whereHelpertypes_Int64Array{field: `map`},
 	Mines:      whereHelpernull_Int16{field: `mines`},
 	StartedAt:  whereHelpernull_Time{field: `started_at`},
 	FinishedAt: whereHelpernull_Time{field: `finished_at`},
@@ -204,8 +175,8 @@ func (*gameR) NewStruct() *gameR {
 type gameL struct{}
 
 var (
-	gameColumns               = []string{"id", "private", "cols", "rows", "map", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
-	gameColumnsWithoutDefault = []string{"cols", "rows", "map", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
+	gameColumns               = []string{"id", "private", "cols", "rows", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
+	gameColumnsWithoutDefault = []string{"cols", "rows", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
 	gameColumnsWithDefault    = []string{"id", "private", "won"}
 	gamePrimaryKeyColumns     = []string{"id"}
 )

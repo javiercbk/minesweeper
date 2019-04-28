@@ -20,7 +20,6 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // ErrInvalidRowCols is returned when given a zero or negative row or column count
@@ -105,7 +104,7 @@ func (h *Handler) Create(c echo.Context) error {
 		return response.NewBadRequestResponse(c, "too many mines")
 	}
 	ctx := c.Request().Context()
-	err = h.CreateGame(ctx, user, &pGame, h.arrayStorageStrategy)
+	err = h.CreateGame(ctx, user, &pGame)
 	if err != nil {
 		return response.NewResponseFromError(c, err)
 	}
@@ -126,16 +125,32 @@ type board struct {
 	board [][]int
 }
 
-type boardStorageStrategy func(context.Context, security.JWTUser, *models.Game) error
-
-// arrayStorageStrategy stores a Game board as an array inside the game
-func (h *Handler) arrayStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
-	return game.Insert(ctx, h.db, boil.Infer())
+// CreateGame creates a random board game and stores a new game in the database
+func (h *Handler) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame) error {
+	board, err := NewBoard(pGame.Rows, pGame.Cols, pGame.Mines)
+	if err != nil {
+		return response.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}
+	}
+	game := &models.Game{
+		Rows:      int16(pGame.Rows),
+		Cols:      int16(pGame.Cols),
+		Mines:     null.Int16From(int16(pGame.Mines)),
+		CreatorID: user.ID,
+		Private:   pGame.Private,
+	}
+	err = h.storeGameBoard(ctx, user, game, board)
+	if err != nil {
+		return err
+	}
+	pGame.ID = game.ID
+	return nil
 }
 
-// tableStorageStrategy stores a Game board in another table
-func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
-	flatBoard := game.Map
+// storeGameBoard stores a Game board in the game_board_points table
+func (h *Handler) storeGameBoard(ctx context.Context, user security.JWTUser, game *models.Game, board [][]int) error {
 	tx, err := h.db.BeginTx(ctx, nil)
 	if err != nil {
 		h.logger.Printf("error beggining transaction: %v\n", err)
@@ -156,14 +171,15 @@ func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUse
 	fmt.Fprintf(&bigInsert, "INSERT INTO game_board_points (game_id, row, col, mine_proximity, created_at) VALUES ")
 	first := true
 	creationDateStr := time.Now().UTC().Format(time.RFC3339)
-	for i := range flatBoard {
-		if first {
-			first = false
-		} else {
-			bigInsert.WriteString(",")
+	for row := range board {
+		for col := range board[row] {
+			if first {
+				first = false
+			} else {
+				bigInsert.WriteString(",")
+			}
+			fmt.Fprintf(&bigInsert, "(%d, %d, %d, %d, '%s')", game.ID, row, col, board[row][col], creationDateStr)
 		}
-		row, col := arrayToBoardPoint(i, int(game.Cols))
-		fmt.Fprintf(&bigInsert, "(%d, %d, %d, %d, '%s')", game.ID, row, col, flatBoard[i], creationDateStr)
 	}
 	bigInsert.WriteString(";")
 	_, err = queries.Raw(bigInsert.String()).ExecContext(ctx, tx)
@@ -189,26 +205,6 @@ func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUse
 	return nil
 }
 
-func (h *Handler) arrayRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
-	game, err := models.Games(qm.Where("id = ? AND (creator_id = ? OR private = false)", gameID, user.ID)).One(ctx, h.db)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, ErrGameNotExists
-		}
-		h.logger.Printf("error retrieving game: %v\n", err)
-		return 0, err
-	}
-	if game.Rows <= int16(row) || game.Cols <= int16(col) {
-		return 0, ErrInvalidRowCols
-	}
-	index := boardToArrayPoint(row, col, int(game.Cols))
-	mapLen := len(game.Map)
-	if mapLen <= index {
-		return 0, ErrInvalidRowCols
-	}
-	return int(game.Map[index]), nil
-}
-
 func (h *Handler) tableRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
 	gameBoardPoint, err := models.GameBoardPoints(
 		qm.Select("mine_proximity"),
@@ -225,38 +221,6 @@ func (h *Handler) tableRowColRetrieval(ctx context.Context, user security.JWTUse
 	return int(gameBoardPoint.MineProximity), nil
 }
 
-func (h *Handler) arrayUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
-	game, err := models.Games(qm.Where("id = ?", gameID)).One(ctx, h.db)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return ErrGameNotExists
-		}
-		h.logger.Printf("error retrieving game: %v\n", err)
-		return err
-	}
-	if game.Rows <= int16(row) || game.Cols <= int16(col) {
-		return ErrInvalidRowCols
-	}
-	index := boardToArrayPoint(row, col, int(game.Cols))
-	mapLen := len(game.Map)
-	if mapLen <= index {
-		return ErrInvalidRowCols
-	}
-	rawQuery := fmt.Sprintf("UPDATE games SET map[%d] = %d WHERE id = %d", index, mineProximity, gameID)
-	res, err := queries.Raw(rawQuery).ExecContext(ctx, h.db)
-	if err != nil {
-		return err
-	}
-	aff, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if aff != 1 {
-		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
-	}
-	return nil
-}
-
 func (h *Handler) tableUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
 	aff, err := models.GameBoardPoints(
 		qm.Where("game_id = ? AND row = ? AND col = ?", gameID, row, col),
@@ -269,32 +233,6 @@ func (h *Handler) tableUpdateRowCol(ctx context.Context, user security.JWTUser, 
 	if aff != 1 {
 		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
 	}
-	return nil
-}
-
-// CreateGame creates a random board game and stores a new game in the database
-func (h *Handler) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame, storageStrategy boardStorageStrategy) error {
-	board, err := NewBoard(pGame.Rows, pGame.Cols, pGame.Mines)
-	if err != nil {
-		return response.HTTPError{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		}
-	}
-	dbBoard := toDBBoard(pGame.Rows, pGame.Cols, board)
-	game := &models.Game{
-		Rows:      int16(pGame.Rows),
-		Cols:      int16(pGame.Cols),
-		Mines:     null.Int16From(int16(pGame.Mines)),
-		CreatorID: user.ID,
-		Private:   pGame.Private,
-		Map:       dbBoard,
-	}
-	err = storageStrategy(ctx, user, game)
-	if err != nil {
-		return err
-	}
-	pGame.ID = game.ID
 	return nil
 }
 
@@ -378,25 +316,4 @@ func (b *board) siblingPoints(row, col int) []boardPoint {
 		}
 	}
 	return points
-}
-
-func toDBBoard(rows, cols int, board [][]int) types.Int64Array {
-	dbBoard := make(types.Int64Array, rows*cols)
-	for i := range board {
-		for j := range board[i] {
-			index := boardToArrayPoint(i, j, cols)
-			dbBoard[index] = int64(board[i][j])
-		}
-	}
-	return dbBoard
-}
-
-func boardToArrayPoint(row, col, colLength int) int {
-	return (row * colLength) + col
-}
-
-func arrayToBoardPoint(index, colLength int) (int, int) {
-	row := int(index / colLength)
-	col := index - (row * colLength)
-	return row, col
 }
