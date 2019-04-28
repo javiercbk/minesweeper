@@ -17,6 +17,8 @@ import (
 	"github.com/labstack/echo"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 )
 
@@ -28,6 +30,9 @@ var ErrTooManyMines = errors.New("too many mines")
 
 // ErrNoneMines is returned when the amount of mines is negative or zero
 var ErrNoneMines = errors.New("none mines")
+
+// ErrGameNotExists is returned when attempting to make an operation with a game that does not exists
+var ErrGameNotExists = errors.New("the game does not exists")
 
 // Handler is a group of handlers within a route.
 type Handler struct {
@@ -99,7 +104,7 @@ func (h *Handler) Create(c echo.Context) error {
 		return response.NewBadRequestResponse(c, "too many mines")
 	}
 	ctx := c.Request().Context()
-	err = h.CreateGame(ctx, user, &pGame, h.ArrayStorageStrategy)
+	err = h.CreateGame(ctx, user, &pGame, h.arrayStorageStrategy)
 	if err != nil {
 		return response.NewResponseFromError(c, err)
 	}
@@ -122,15 +127,13 @@ type board struct {
 
 type boardStorageStrategy func(context.Context, security.JWTUser, *models.Game) error
 
-// board storage strategy to benchmark
-
-// ArrayStorageStrategy stores a Game board as an array inside the game
-func (h *Handler) ArrayStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+// arrayStorageStrategy stores a Game board as an array inside the game
+func (h *Handler) arrayStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
 	return game.Insert(ctx, h.db, boil.Infer())
 }
 
-// TableStorageStrategy stores a Game board in another table
-func (h *Handler) TableStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+// tableStorageStrategy stores a Game board in another table
+func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
 	flatBoard := game.Map
 	tx, err := h.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -176,6 +179,89 @@ func (h *Handler) TableStorageStrategy(ctx context.Context, user security.JWTUse
 			h.logger.Printf("error rolling back operation with error: %v\n", rollbackError)
 		}
 		return err
+	}
+	return nil
+}
+
+func (h *Handler) arrayRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
+	game, err := models.Games(qm.Where("id = ? AND (creator_id = ? OR private = false)", gameID, user.ID)).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrGameNotExists
+		}
+		h.logger.Printf("error retrieving game: %v\n", err)
+		return 0, err
+	}
+	if game.Rows <= int16(row) || game.Cols <= int16(col) {
+		return 0, ErrInvalidRowCols
+	}
+	index := boardToArrayPoint(row, col, int(game.Cols))
+	mapLen := len(game.Map)
+	if mapLen <= index {
+		return 0, ErrInvalidRowCols
+	}
+	return int(game.Map[index]), nil
+}
+
+func (h *Handler) tableRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
+	gameBoardPoint, err := models.GameBoardPoints(
+		qm.Select("mine_proximity"),
+		qm.InnerJoin("games g on g.id = game_board_points.game_id"),
+		qm.Where("game_board_points.game_id = ? AND game_board_points.row = ? AND game_board_points.col = ? AND (g.creator_id = ? OR g.private = false)", gameID, row, col, user.ID),
+	).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrInvalidRowCols
+		}
+		h.logger.Printf("error retrieving game board point: %v\n", err)
+		return 0, err
+	}
+	return int(gameBoardPoint.MineProximity), nil
+}
+
+func (h *Handler) arrayUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
+	game, err := models.Games(qm.Where("id = ?", gameID)).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrGameNotExists
+		}
+		h.logger.Printf("error retrieving game: %v\n", err)
+		return err
+	}
+	if game.Rows <= int16(row) || game.Cols <= int16(col) {
+		return ErrInvalidRowCols
+	}
+	index := boardToArrayPoint(row, col, int(game.Cols))
+	mapLen := len(game.Map)
+	if mapLen <= index {
+		return ErrInvalidRowCols
+	}
+	rawQuery := fmt.Sprintf("UPDATE games SET map[%d] = %d WHERE id = %d", index, mineProximity, gameID)
+	res, err := queries.Raw(rawQuery).ExecContext(ctx, h.db)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff != 1 {
+		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
+	}
+	return nil
+}
+
+func (h *Handler) tableUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
+	aff, err := models.GameBoardPoints(
+		qm.Where("game_id = ? AND row = ? AND col = ?", gameID, row, col),
+	).UpdateAll(ctx, h.db, models.M{
+		"mine_proximity": mineProximity,
+	})
+	if err != nil {
+		return err
+	}
+	if aff != 1 {
+		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
 	}
 	return nil
 }

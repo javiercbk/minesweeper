@@ -31,6 +31,8 @@ CREATE TABLE games(
     CONSTRAINT fk_games_creator FOREIGN KEY (creator_id) REFERENCES players (id)
 );
 
+CREATE INDEX idx_game_map on games USING GIN (map);
+
 CREATE TABLE game_operations(
     id BIGSERIAL NOT NULL PRIMARY KEY,
     game_id BIGINT NOT NULL,
@@ -51,7 +53,7 @@ CREATE TABLE game_board_points(
     mine_proximity SMALLINT NOT NULL,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT cnst_games_map_x_y CHECK (row > 0 AND col > 0 AND row <= 100 AND col <= 100),
+    CONSTRAINT cnst_games_map_x_y CHECK (row >= 0 AND col >= 0 AND row < 100 AND col < 100),
     CONSTRAINT fk_games_map_game FOREIGN KEY (game_id) REFERENCES games (id)
 );
 

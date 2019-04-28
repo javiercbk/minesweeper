@@ -32,3 +32,6 @@ version:
 
 test:
 	go test ./...
+
+benchmark-game:
+	go test -benchmem -run=^$ github.com/javiercbk/minesweeper/game -bench ^Benchmark.*$ -benchtime=20s
