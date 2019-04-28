@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/javiercbk/minesweeper/http/response"
@@ -151,24 +152,29 @@ func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUse
 		}
 		return err
 	}
+	var bigInsert strings.Builder
+	fmt.Fprintf(&bigInsert, "INSERT INTO game_board_points (game_id, row, col, mine_proximity, created_at) VALUES ")
+	first := true
+	creationDateStr := time.Now().UTC().Format(time.RFC3339)
 	for i := range flatBoard {
+		if first {
+			first = false
+		} else {
+			bigInsert.WriteString(",")
+		}
 		row, col := arrayToBoardPoint(i, int(game.Cols))
-		gbPoint := &models.GameBoardPoint{
-			GameID:        game.ID,
-			Row:           int16(row),
-			Col:           int16(col),
-			MineProximity: int16(flatBoard[i]),
+		fmt.Fprintf(&bigInsert, "(%d, %d, %d, %d, '%s')", game.ID, row, col, flatBoard[i], creationDateStr)
+	}
+	bigInsert.WriteString(";")
+	_, err = queries.Raw(bigInsert.String()).ExecContext(ctx, tx)
+	if err != nil {
+		h.logger.Printf("error inserting all game board points for game %d: %s\n", game.ID, err)
+		// just log rollback error
+		rollbackError := tx.Rollback()
+		if rollbackError != nil {
+			h.logger.Printf("error rolling back game creation with error: %v\n", rollbackError)
 		}
-		err = gbPoint.Insert(ctx, tx, boil.Infer())
-		if err != nil {
-			h.logger.Printf("error inserting game board point: %v. Rolling back operation\n", err)
-			// just log rollback error
-			rollbackError := tx.Rollback()
-			if rollbackError != nil {
-				h.logger.Printf("error rolling back game board point creation with error: %v\n", rollbackError)
-			}
-			return err
-		}
+		return err
 	}
 	err = tx.Commit()
 	if err != nil {

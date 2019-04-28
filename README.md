@@ -137,7 +137,8 @@ Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 - [x] Implement the *minesweep algebra* in the backend (GO).
 - [x] Write the skeleton API
 - [x] Implement authentication.
-- [ ] Implement the game backend API and benchmark the normalized and denormalized approach.
+- [x] Implement the game backend API and benchmark the normalized and denormalized approach.
+- [x] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
 - [ ] Create a login page in the frontend.
 - [ ] Implement the *minesweep algebra* in javascript.
 - [ ] Implement a client for the backend API.
