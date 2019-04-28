@@ -15,10 +15,10 @@ CREATE UNIQUE INDEX idx_players_name ON players (name);
 
 CREATE TABLE games(
     id BIGSERIAL NOT NULL PRIMARY KEY,
-    private BOOLEAN DEFAULT FALSE,
-    board_x_size SMALLINT NOT NULL,
-    board_y_size SMALLINT NOT NULL,
-    map SMALLINT[][],
+    private BOOLEAN NOT NULL DEFAULT FALSE,
+    rows SMALLINT NOT NULL,
+    cols SMALLINT NOT NULL,
+    map SMALLINT[],
     mines SMALLINT,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
@@ -26,10 +26,12 @@ CREATE TABLE games(
     creator_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT cnst_games_board CHECK (board_x_size > 0 AND board_y_size > 0 AND board_x_size <= 100 AND board_y_size <= 100),
-    CONSTRAINT cnst_games_mines CHECK (mines > 0 AND (board_x_size * board_y_size) - 1 > mines),
+    CONSTRAINT cnst_games_board CHECK (cols > 0 AND rows > 0 AND cols <= 100 AND rows <= 100),
+    CONSTRAINT cnst_games_mines CHECK (mines > 0 AND (rows * cols) - 1 > mines),
     CONSTRAINT fk_games_creator FOREIGN KEY (creator_id) REFERENCES players (id)
 );
+
+CREATE INDEX idx_game_map on games USING GIN (map);
 
 CREATE TABLE game_operations(
     id BIGSERIAL NOT NULL PRIMARY KEY,
@@ -46,14 +48,14 @@ CREATE UNIQUE INDEX idx_game_operation ON game_operations (game_id, operation_id
 CREATE TABLE game_board_points(
     id BIGSERIAL NOT NULL PRIMARY KEY,
     game_id BIGINT NOT NULL,
-    x SMALLINT NOT NULL,
-    y SMALLINT NOT NULL,
+    row SMALLINT NOT NULL,
+    col SMALLINT NOT NULL,
     mine_proximity SMALLINT NOT NULL,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT cnst_games_map_x_y CHECK (x > 0 AND y > 0 AND x <= 100 AND y <= 100),
+    CONSTRAINT cnst_games_map_x_y CHECK (row >= 0 AND col >= 0 AND row < 100 AND col < 100),
     CONSTRAINT fk_games_map_game FOREIGN KEY (game_id) REFERENCES games (id)
 );
 
-CREATE UNIQUE INDEX idx_game_board ON game_board_points (game_id, x, y);
+CREATE UNIQUE INDEX idx_game_board ON game_board_points (game_id, row, col);
 CREATE INDEX idx_game_board_mine_proximity ON game_board_points (game_id, mine_proximity);

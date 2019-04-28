@@ -26,8 +26,8 @@ import (
 type GameBoardPoint struct {
 	ID            int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
 	GameID        int64            `boil:"game_id" json:"gameID" toml:"gameID" yaml:"gameID"`
-	X             int16            `boil:"x" json:"x" toml:"x" yaml:"x"`
-	Y             int16            `boil:"y" json:"y" toml:"y" yaml:"y"`
+	Row           int16            `boil:"row" json:"row" toml:"row" yaml:"row"`
+	Col           int16            `boil:"col" json:"col" toml:"col" yaml:"col"`
 	MineProximity int16            `boil:"mine_proximity" json:"mineProximity" toml:"mineProximity" yaml:"mineProximity"`
 	CreatedAt     null.Time        `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
 	UpdatedAt     null.Time        `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
@@ -38,16 +38,16 @@ type GameBoardPoint struct {
 var GameBoardPointColumns = struct {
 	ID            string
 	GameID        string
-	X             string
-	Y             string
+	Row           string
+	Col           string
 	MineProximity string
 	CreatedAt     string
 	UpdatedAt     string
 }{
 	ID:            "id",
 	GameID:        "game_id",
-	X:             "x",
-	Y:             "y",
+	Row:           "row",
+	Col:           "col",
 	MineProximity: "mine_proximity",
 	CreatedAt:     "created_at",
 	UpdatedAt:     "updated_at",
@@ -99,16 +99,16 @@ func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
 var GameBoardPointWhere = struct {
 	ID            whereHelperint64
 	GameID        whereHelperint64
-	X             whereHelperint16
-	Y             whereHelperint16
+	Row           whereHelperint16
+	Col           whereHelperint16
 	MineProximity whereHelperint16
 	CreatedAt     whereHelpernull_Time
 	UpdatedAt     whereHelpernull_Time
 }{
 	ID:            whereHelperint64{field: `id`},
 	GameID:        whereHelperint64{field: `game_id`},
-	X:             whereHelperint16{field: `x`},
-	Y:             whereHelperint16{field: `y`},
+	Row:           whereHelperint16{field: `row`},
+	Col:           whereHelperint16{field: `col`},
 	MineProximity: whereHelperint16{field: `mine_proximity`},
 	CreatedAt:     whereHelpernull_Time{field: `created_at`},
 	UpdatedAt:     whereHelpernull_Time{field: `updated_at`},
@@ -135,8 +135,8 @@ func (*gameBoardPointR) NewStruct() *gameBoardPointR {
 type gameBoardPointL struct{}
 
 var (
-	gameBoardPointColumns               = []string{"id", "game_id", "x", "y", "mine_proximity", "created_at", "updated_at"}
-	gameBoardPointColumnsWithoutDefault = []string{"game_id", "x", "y", "mine_proximity", "created_at", "updated_at"}
+	gameBoardPointColumns               = []string{"id", "game_id", "row", "col", "mine_proximity", "created_at", "updated_at"}
+	gameBoardPointColumnsWithoutDefault = []string{"game_id", "row", "col", "mine_proximity", "created_at", "updated_at"}
 	gameBoardPointColumnsWithDefault    = []string{"id"}
 	gameBoardPointPrimaryKeyColumns     = []string{"id"}
 )

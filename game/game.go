@@ -1,16 +1,25 @@
 package game
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/javiercbk/minesweeper/http/response"
+	"github.com/javiercbk/minesweeper/http/security"
+	"github.com/javiercbk/minesweeper/models"
 	"github.com/labstack/echo"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 // ErrInvalidRowCols is returned when given a zero or negative row or column count
@@ -21,6 +30,9 @@ var ErrTooManyMines = errors.New("too many mines")
 
 // ErrNoneMines is returned when the amount of mines is negative or zero
 var ErrNoneMines = errors.New("none mines")
+
+// ErrGameNotExists is returned when attempting to make an operation with a game that does not exists
+var ErrGameNotExists = errors.New("the game does not exists")
 
 // Handler is a group of handlers within a route.
 type Handler struct {
@@ -60,9 +72,43 @@ func (h *Handler) Retrieve(c echo.Context) error {
 	return response.NewNotFoundResponse(c)
 }
 
+// ProspectGame contains all the information needed to build a new game
+type ProspectGame struct {
+	ID      int64 `json:"id"`
+	Rows    int   `json:"rows" validate:"required,gt=0,lte=100"`
+	Cols    int   `json:"cols" validate:"required,gt=0,lte=100"`
+	Mines   int   `json:"mines" validate:"required,gt=0,lte=100"`
+	Private bool  `json:"private" validate:"required"`
+}
+
 // Create is the http handler that creates a game
 func (h *Handler) Create(c echo.Context) error {
-	return response.NewNotFoundResponse(c)
+	user, err := security.JWTDecode(c)
+	if err == security.ErrUserNotFound {
+		h.logger.Printf("error finding jwt token in context: %v\n", err)
+		return response.NewErrorResponse(c, http.StatusForbidden, "authentication token was not found")
+	}
+	pGame := ProspectGame{}
+	err = c.Bind(&pGame)
+	if err != nil {
+		h.logger.Printf("could not bind request data%v\n", err)
+		return response.NewBadRequestResponse(c, "rows, cols, mines and private are required")
+	}
+	if err = c.Validate(pGame); err != nil {
+		h.logger.Printf("validation error %v\n", err)
+		return response.NewBadRequestResponse(c, err.Error())
+	}
+	pointsCount := pGame.Rows * pGame.Cols
+	if pointsCount <= pGame.Mines {
+		h.logger.Printf("validation error too many mines\n")
+		return response.NewBadRequestResponse(c, "too many mines")
+	}
+	ctx := c.Request().Context()
+	err = h.CreateGame(ctx, user, &pGame, h.arrayStorageStrategy)
+	if err != nil {
+		return response.NewResponseFromError(c, err)
+	}
+	return response.NewSuccessResponse(c, pGame)
 }
 
 // end of http handlers
@@ -77,6 +123,173 @@ type board struct {
 	cols  int
 	mines int
 	board [][]int
+}
+
+type boardStorageStrategy func(context.Context, security.JWTUser, *models.Game) error
+
+// arrayStorageStrategy stores a Game board as an array inside the game
+func (h *Handler) arrayStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+	return game.Insert(ctx, h.db, boil.Infer())
+}
+
+// tableStorageStrategy stores a Game board in another table
+func (h *Handler) tableStorageStrategy(ctx context.Context, user security.JWTUser, game *models.Game) error {
+	flatBoard := game.Map
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		h.logger.Printf("error beggining transaction: %v\n", err)
+		return err
+	}
+	// do not insert map
+	err = game.Insert(ctx, tx, boil.Whitelist("private", "cols", "rows", "mines", "creator_id"))
+	if err != nil {
+		h.logger.Printf("error inserting game: %v. Rolling back game insertion\n", err)
+		// just log rollback error
+		rollbackError := tx.Rollback()
+		if rollbackError != nil {
+			h.logger.Printf("error rolling back game creation with error: %v\n", rollbackError)
+		}
+		return err
+	}
+	for i := range flatBoard {
+		row, col := arrayToBoardPoint(i, int(game.Cols))
+		gbPoint := &models.GameBoardPoint{
+			GameID:        game.ID,
+			Row:           int16(row),
+			Col:           int16(col),
+			MineProximity: int16(flatBoard[i]),
+		}
+		err = gbPoint.Insert(ctx, tx, boil.Infer())
+		if err != nil {
+			h.logger.Printf("error inserting game board point: %v. Rolling back operation\n", err)
+			// just log rollback error
+			rollbackError := tx.Rollback()
+			if rollbackError != nil {
+				h.logger.Printf("error rolling back game board point creation with error: %v\n", rollbackError)
+			}
+			return err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		h.logger.Printf("error commiting transaction: %v. Rolling back operation\n", err)
+		// just log rollback error
+		rollbackError := tx.Rollback()
+		if rollbackError != nil {
+			h.logger.Printf("error rolling back operation with error: %v\n", rollbackError)
+		}
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) arrayRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
+	game, err := models.Games(qm.Where("id = ? AND (creator_id = ? OR private = false)", gameID, user.ID)).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrGameNotExists
+		}
+		h.logger.Printf("error retrieving game: %v\n", err)
+		return 0, err
+	}
+	if game.Rows <= int16(row) || game.Cols <= int16(col) {
+		return 0, ErrInvalidRowCols
+	}
+	index := boardToArrayPoint(row, col, int(game.Cols))
+	mapLen := len(game.Map)
+	if mapLen <= index {
+		return 0, ErrInvalidRowCols
+	}
+	return int(game.Map[index]), nil
+}
+
+func (h *Handler) tableRowColRetrieval(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
+	gameBoardPoint, err := models.GameBoardPoints(
+		qm.Select("mine_proximity"),
+		qm.InnerJoin("games g on g.id = game_board_points.game_id"),
+		qm.Where("game_board_points.game_id = ? AND game_board_points.row = ? AND game_board_points.col = ? AND (g.creator_id = ? OR g.private = false)", gameID, row, col, user.ID),
+	).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrInvalidRowCols
+		}
+		h.logger.Printf("error retrieving game board point: %v\n", err)
+		return 0, err
+	}
+	return int(gameBoardPoint.MineProximity), nil
+}
+
+func (h *Handler) arrayUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
+	game, err := models.Games(qm.Where("id = ?", gameID)).One(ctx, h.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrGameNotExists
+		}
+		h.logger.Printf("error retrieving game: %v\n", err)
+		return err
+	}
+	if game.Rows <= int16(row) || game.Cols <= int16(col) {
+		return ErrInvalidRowCols
+	}
+	index := boardToArrayPoint(row, col, int(game.Cols))
+	mapLen := len(game.Map)
+	if mapLen <= index {
+		return ErrInvalidRowCols
+	}
+	rawQuery := fmt.Sprintf("UPDATE games SET map[%d] = %d WHERE id = %d", index, mineProximity, gameID)
+	res, err := queries.Raw(rawQuery).ExecContext(ctx, h.db)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff != 1 {
+		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
+	}
+	return nil
+}
+
+func (h *Handler) tableUpdateRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col, mineProximity int) error {
+	aff, err := models.GameBoardPoints(
+		qm.Where("game_id = ? AND row = ? AND col = ?", gameID, row, col),
+	).UpdateAll(ctx, h.db, models.M{
+		"mine_proximity": mineProximity,
+	})
+	if err != nil {
+		return err
+	}
+	if aff != 1 {
+		return fmt.Errorf("invalid row count %d when updating a game mine proximity", aff)
+	}
+	return nil
+}
+
+// CreateGame creates a random board game and stores a new game in the database
+func (h *Handler) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame, storageStrategy boardStorageStrategy) error {
+	board, err := NewBoard(pGame.Rows, pGame.Cols, pGame.Mines)
+	if err != nil {
+		return response.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}
+	}
+	dbBoard := toDBBoard(pGame.Rows, pGame.Cols, board)
+	game := &models.Game{
+		Rows:      int16(pGame.Rows),
+		Cols:      int16(pGame.Cols),
+		Mines:     null.Int16From(int16(pGame.Mines)),
+		CreatorID: user.ID,
+		Private:   pGame.Private,
+		Map:       dbBoard,
+	}
+	err = storageStrategy(ctx, user, game)
+	if err != nil {
+		return err
+	}
+	pGame.ID = game.ID
+	return nil
 }
 
 // NewBoard creates a random minesweeper board
@@ -161,9 +374,23 @@ func (b *board) siblingPoints(row, col int) []boardPoint {
 	return points
 }
 
-// CreateBoard creates a new minesweeper board
-func CreateBoard(rows, cols, mines int) ([][]int, error) {
-	var board [][]int
+func toDBBoard(rows, cols int, board [][]int) types.Int64Array {
+	dbBoard := make(types.Int64Array, rows*cols)
+	for i := range board {
+		for j := range board[i] {
+			index := boardToArrayPoint(i, j, cols)
+			dbBoard[index] = int64(board[i][j])
+		}
+	}
+	return dbBoard
+}
 
-	return board, nil
+func boardToArrayPoint(row, col, colLength int) int {
+	return (row * colLength) + col
+}
+
+func arrayToBoardPoint(index, colLength int) (int, int) {
+	row := int(index / colLength)
+	col := index - (row * colLength)
+	return row, col
 }

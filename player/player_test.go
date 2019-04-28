@@ -16,6 +16,7 @@ import (
 // abcHashed is the bcrypt hash of the string "abc" (without quotes)
 const abcHashed = "$2y$12$Fq0ne4S2xnhZTYE7p/veuOX3X6DlF1qZYeeHhK/PY39TP7//klYkW"
 const jwtSecret = "wow"
+const username = "existingUserName"
 
 func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
@@ -40,8 +41,7 @@ func setUp(ctx context.Context, t *testing.T, existingUserName string) *Handler 
 
 func TestCreatePlayer(t *testing.T) {
 	ctx := context.Background()
-	existingUserName := "existingUserName"
-	handler := setUp(ctx, t, existingUserName)
+	handler := setUp(ctx, t, username)
 	tests := []struct {
 		pPlayer ProspectPlayer
 		err     error
@@ -55,12 +55,12 @@ func TestCreatePlayer(t *testing.T) {
 		},
 		{
 			pPlayer: ProspectPlayer{
-				Name:     existingUserName,
+				Name:     username,
 				Password: "abc",
 			},
 			err: response.HTTPError{
 				Code:    http.StatusConflict,
-				Message: fmt.Sprintf("player %s already exists", existingUserName),
+				Message: fmt.Sprintf("player %s already exists", username),
 			},
 		},
 	}
