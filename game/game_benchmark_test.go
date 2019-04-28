@@ -78,7 +78,7 @@ func BenchmarkArrayStorage(b *testing.B) {
 	}
 }
 
-// 20	1206168492 ns/op	20531937 B/op	  530139 allocs/op
+// 10	 190661383 ns/op	 3972940 B/op	   50126 allocs/op
 func BenchmarkTableStorage(b *testing.B) {
 	ctx := context.Background()
 	handler, user := setUp(ctx, b, username)
