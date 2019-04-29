@@ -97,8 +97,6 @@ type (
 	// PlayerSlice is an alias for a slice of pointers to Player.
 	// This should generally be used opposed to []Player.
 	PlayerSlice []*Player
-	// PlayerHook is the signature for custom Player hook methods
-	PlayerHook func(context.Context, boil.ContextExecutor, *Player) error
 
 	playerQuery struct {
 		*queries.Query
@@ -126,176 +124,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var playerBeforeInsertHooks []PlayerHook
-var playerBeforeUpdateHooks []PlayerHook
-var playerBeforeDeleteHooks []PlayerHook
-var playerBeforeUpsertHooks []PlayerHook
-
-var playerAfterInsertHooks []PlayerHook
-var playerAfterSelectHooks []PlayerHook
-var playerAfterUpdateHooks []PlayerHook
-var playerAfterDeleteHooks []PlayerHook
-var playerAfterUpsertHooks []PlayerHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Player) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Player) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Player) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Player) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Player) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Player) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Player) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Player) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Player) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range playerAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddPlayerHook registers your hook function for all future operations.
-func AddPlayerHook(hookPoint boil.HookPoint, playerHook PlayerHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		playerBeforeInsertHooks = append(playerBeforeInsertHooks, playerHook)
-	case boil.BeforeUpdateHook:
-		playerBeforeUpdateHooks = append(playerBeforeUpdateHooks, playerHook)
-	case boil.BeforeDeleteHook:
-		playerBeforeDeleteHooks = append(playerBeforeDeleteHooks, playerHook)
-	case boil.BeforeUpsertHook:
-		playerBeforeUpsertHooks = append(playerBeforeUpsertHooks, playerHook)
-	case boil.AfterInsertHook:
-		playerAfterInsertHooks = append(playerAfterInsertHooks, playerHook)
-	case boil.AfterSelectHook:
-		playerAfterSelectHooks = append(playerAfterSelectHooks, playerHook)
-	case boil.AfterUpdateHook:
-		playerAfterUpdateHooks = append(playerAfterUpdateHooks, playerHook)
-	case boil.AfterDeleteHook:
-		playerAfterDeleteHooks = append(playerAfterDeleteHooks, playerHook)
-	case boil.AfterUpsertHook:
-		playerAfterUpsertHooks = append(playerAfterUpsertHooks, playerHook)
-	}
-}
-
 // One returns a single player record from the query.
 func (q playerQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Player, error) {
 	o := &Player{}
@@ -310,10 +138,6 @@ func (q playerQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Playe
 		return nil, errors.Wrap(err, "models: failed to execute a one query for players")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -324,14 +148,6 @@ func (q playerQuery) All(ctx context.Context, exec boil.ContextExecutor) (Player
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Player slice")
-	}
-
-	if len(playerAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -471,13 +287,6 @@ func (playerL) LoadGameOperations(ctx context.Context, e boil.ContextExecutor, s
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for game_operations")
 	}
 
-	if len(gameOperationAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.GameOperations = resultSlice
 		for _, foreign := range resultSlice {
@@ -566,13 +375,6 @@ func (playerL) LoadCreatorGames(ctx context.Context, e boil.ContextExecutor, sin
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for games")
 	}
 
-	if len(gameAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.CreatorGames = resultSlice
 		for _, foreign := range resultSlice {
@@ -757,10 +559,6 @@ func (o *Player) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 		}
 	}
 
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(playerColumnsWithDefault, o)
 
 	key := makeCacheKey(columns, nzDefaults)
@@ -823,7 +621,7 @@ func (o *Player) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 		playerInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Player.
@@ -837,9 +635,6 @@ func (o *Player) Update(ctx context.Context, exec boil.ContextExecutor, columns 
 	}
 
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	playerUpdateCacheMut.RLock()
 	cache, cached := playerUpdateCache[key]
@@ -892,7 +687,7 @@ func (o *Player) Update(ctx context.Context, exec boil.ContextExecutor, columns 
 		playerUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -973,10 +768,6 @@ func (o *Player) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 			queries.SetScanner(&o.CreatedAt, currTime)
 		}
 		queries.SetScanner(&o.UpdatedAt, currTime)
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(playerColumnsWithDefault, o)
@@ -1080,7 +871,7 @@ func (o *Player) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 		playerUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Player record with an executor.
@@ -1088,10 +879,6 @@ func (o *Player) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 func (o *Player) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Player provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), playerPrimaryKeyMapping)
@@ -1110,10 +897,6 @@ func (o *Player) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for players")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -1150,14 +933,6 @@ func (o PlayerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (
 		return 0, nil
 	}
 
-	if len(playerBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), playerPrimaryKeyMapping)
@@ -1180,14 +955,6 @@ func (o PlayerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for players")
-	}
-
-	if len(playerAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil
