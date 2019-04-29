@@ -205,6 +205,32 @@ func (api API) ApplyOperation(ctx context.Context, user security.JWTUser, oper O
 		}
 		return confirmation, err
 	}
+	// first we need to check if there are operations to compose
+	gameOperations, err := models.GameOperations(qm.Where("game_id = > and id >= ?", oper.GameID, oper.ID)).All(ctx, api.db)
+	if err != nil && err != sql.ErrNoRows {
+		return confirmation, err
+	}
+	clientOperation, err := algebra.NewOperation(oper.Op, oper.Row, oper.Col)
+	if err != nil {
+		// ErrUnknownOperation
+		return confirmation, response.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: fmt.Sprintf("unknown operation %d", oper.Op),
+		}
+	}
+	serverOperationsLen := len(gameOperations)
+	if serverOperationsLen > 0 {
+		serverOperations := make([]algebra.Operation, serverOperationsLen)
+		for i, o := range gameOperations {
+			// since this operations comes from the server, it will never throw an error
+			// because we guarantee it is valid
+			serverOperations[i], _ = toAlgebraOperation(o)
+		}
+		for _, o := range gameOperations {
+			algebra.ComposeMulti(serverOperations, clientOperation)
+		}
+
+	}
 	return confirmation, nil
 }
 
@@ -319,4 +345,12 @@ func (b *board) siblingPoints(row, col int) []boardPoint {
 		}
 	}
 	return points
+}
+
+func toAlgebraOperation(o *models.GameOperation) (algebra.Operation, error) {
+	opType := algebra.OpMark
+	if o.Operation == models.MineOperationReveal {
+		opType = algebra.OpReveal
+	}
+	return algebra.NewOperation(algebra.OperationType(opType), int(o.Row), int(o.Col))
 }

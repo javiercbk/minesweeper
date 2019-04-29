@@ -34,6 +34,8 @@ CREATE TABLE game_operations(
     id BIGSERIAL NOT NULL PRIMARY KEY,
     game_id BIGINT NOT NULL,
     player_id BIGINT NOT NULL,
+    row SMALLINT NOT NULL,
+    col SMALLINT NOT NULL,
     operation_id INTEGER NOT NULL,
     operation mine_operation NOT NULL,
     CONSTRAINT fk_game_operation_game FOREIGN KEY (game_id) REFERENCES games (id),

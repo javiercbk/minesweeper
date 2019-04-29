@@ -116,3 +116,9 @@ func Compose(oper1, oper2 Operation) CompositionResult {
 	}
 	return result
 }
+
+// ComposeMulti composes an array of operations with a single operation
+func ComposeMulti(operations []Operation, oper Operation) CompositionResult {
+	//TODO: need to Compose an array of operations with a single operation
+	return CompositionResult{}
+}

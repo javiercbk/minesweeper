@@ -28,6 +28,8 @@ type GameOperation struct {
 	PlayerID    int64           `boil:"player_id" json:"playerID" toml:"playerID" yaml:"playerID"`
 	OperationID int             `boil:"operation_id" json:"operationID" toml:"operationID" yaml:"operationID"`
 	Operation   string          `boil:"operation" json:"operation" toml:"operation" yaml:"operation"`
+	Row         int16           `boil:"row" json:"row" toml:"row" yaml:"row"`
+	Col         int16           `boil:"col" json:"col" toml:"col" yaml:"col"`
 	R           *gameOperationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L           gameOperationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
@@ -38,12 +40,16 @@ var GameOperationColumns = struct {
 	PlayerID    string
 	OperationID string
 	Operation   string
+	Row         string
+	Col         string
 }{
 	ID:          "id",
 	GameID:      "game_id",
 	PlayerID:    "player_id",
 	OperationID: "operation_id",
 	Operation:   "operation",
+	Row:         "row",
+	Col:         "col",
 }
 
 // Generated where
@@ -72,12 +78,16 @@ var GameOperationWhere = struct {
 	PlayerID    whereHelperint64
 	OperationID whereHelperint
 	Operation   whereHelperstring
+	Row         whereHelperint16
+	Col         whereHelperint16
 }{
 	ID:          whereHelperint64{field: `id`},
 	GameID:      whereHelperint64{field: `game_id`},
 	PlayerID:    whereHelperint64{field: `player_id`},
 	OperationID: whereHelperint{field: `operation_id`},
 	Operation:   whereHelperstring{field: `operation`},
+	Row:         whereHelperint16{field: `row`},
+	Col:         whereHelperint16{field: `col`},
 }
 
 // GameOperationRels is where relationship names are stored.
@@ -104,8 +114,8 @@ func (*gameOperationR) NewStruct() *gameOperationR {
 type gameOperationL struct{}
 
 var (
-	gameOperationColumns               = []string{"id", "game_id", "player_id", "operation_id", "operation"}
-	gameOperationColumnsWithoutDefault = []string{"game_id", "player_id", "operation_id", "operation"}
+	gameOperationColumns               = []string{"id", "game_id", "player_id", "operation_id", "operation", "row", "col"}
+	gameOperationColumnsWithoutDefault = []string{"game_id", "player_id", "operation_id", "operation", "row", "col"}
 	gameOperationColumnsWithDefault    = []string{"id"}
 	gameOperationPrimaryKeyColumns     = []string{"id"}
 )
