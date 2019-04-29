@@ -161,7 +161,6 @@ func TestApplySuccessfulRevealOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpReveal,
 					Applied: true,
-					GameID:  1,
 				},
 				Status: Status{
 					Rows: 3,
@@ -177,6 +176,7 @@ func TestApplySuccessfulRevealOperations(t *testing.T) {
 	}
 	for i, test := range tests {
 		err := api.storeGameBoard(ctx, user, test.game, test.initialBoard)
+		test.expectedConfirmation.Operation.GameID = test.game.ID
 		if err != nil {
 			t.Fatalf("test %d, failed: error creating board %v\n", i, err)
 		}

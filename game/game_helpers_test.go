@@ -39,12 +39,18 @@ func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUse
 		Name:     name,
 		Password: abcHashed,
 	}
-	createPlayer(ctx, db, t, testPlayer)
+	err = createPlayer(ctx, db, testPlayer)
+	if err != nil {
+		t.Fatalf("error creating player %v", err)
+	}
 	anotherTestPlayer := &models.Player{
 		Name:     anotherUsername,
 		Password: abcHashed,
 	}
-	createPlayer(ctx, db, t, anotherTestPlayer)
+	err = createPlayer(ctx, db, anotherTestPlayer)
+	if err != nil {
+		t.Fatalf("error creating player %v", err)
+	}
 	return NewAPI(logger, db), security.JWTUser{
 			ID:   testPlayer.ID,
 			Name: name,
@@ -54,21 +60,26 @@ func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUse
 		}
 }
 
-func createPlayer(ctx context.Context, db *sql.DB, t testing.TB, player *models.Player) {
+func createPlayer(ctx context.Context, db *sql.DB, player *models.Player) error {
 	err := player.Insert(ctx, db, boil.Infer())
 	if err != nil {
 		cause := extErrors.Cause(err)
 		if pgerr, ok := cause.(*pq.Error); ok {
 			if pgerr.Constraint == uniqueNameConstaintName {
-				player, err = models.Players(qm.Where("name = ?", player.Name)).One(ctx, db)
+				dbPlayer, err := models.Players(qm.Where("name = ?", player.Name)).One(ctx, db)
 				if err != nil {
-					t.Fatalf("error retrieving test user: %v\n", err)
+					return fmt.Errorf("error retrieving test user: %v", err)
 				}
+				player.ID = dbPlayer.ID
+				player.Name = dbPlayer.Name
+			} else {
+				return err
 			}
 		} else {
-			t.Fatalf("error inserting test user: %v\n", err)
+			return fmt.Errorf("error inserting test user: %v", err)
 		}
 	}
+	return nil
 }
 
 func assertOperationConfirmation(o1, o2 OperationConfirmation) error {
