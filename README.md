@@ -130,6 +130,54 @@ I have certain hypothesis:
 
 Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 
+### Benchmarks results
+
+Chech the full benchmarks in the branch [jl/game-benchmark](https://github.com/javiercbk/minesweeper/tree/jl/game-benchmark)
+
+###### Game board first storage
+
+Storing the game board with array
+
+> 10000	   3775875 ns/op	  546135 B/op	     281 allocs/op
+
+Storing the game board in the normalized structure
+
+> 10	 190661383 ns/op	 3972940 B/op	   50126 allocs/op
+
+Storing the game board denormalized significantly improves storing the game board for the first time (game creation).
+
+###### Row column retrieval
+
+Retrieving a single game board row column with the denormalized approach
+
+> 1000	   2034873 ns/op	 1227521 B/op	   10101 allocs/op
+
+Retrieving a single game row column with the normalized approach
+
+>  10000	    177058 ns/op	    3324 B/op	      68 allocs/op
+
+It is clear that accessing a single row, column is way faster and requires much less allocations than the denormalized approach.
+
+###### Row column update
+
+Updating a single row column in the denormalized approach
+
+> 300	   4154761 ns/op	 1226859 B/op	    9955 allocs/op
+
+Updating a single row column in the normalized approach
+
+> 1000	   1636261 ns/op	    2326 B/op	      54 allocs/op
+
+Updating a single row column in the normalized approach is way faster as well and requires much less allocations than the denormalized approach.
+
+#### Benchmark conclusions
+
+While game creation is incredibly fast with the array approach, retrieving and updating a single value is significantly slower and performs too much allocations. Even though the allocations issue could be improved, it would require to start making weird queries that would be more error prone and (obviosly) would mean leaving relational rules behind.
+
+If I have to choose between faster game creations or faster game update, I choose the later thus concluding that the denormalized approach is discarded and I don't think that attempting to improve updates with updates is going to pay off.
+
+
+
 ## TODO
 
 - [x] Analyze and write down the solution specification.
@@ -138,7 +186,7 @@ Are my hypothesis correct? I don't know, but I can quickly benchmark this.
 - [x] Write the skeleton API
 - [x] Implement authentication.
 - [x] Implement the game backend API and benchmark the normalized and denormalized approach.
-- [x] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
+- [ ] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
 - [ ] Create a login page in the frontend.
 - [ ] Implement the *minesweep algebra* in javascript.
 - [ ] Implement a client for the backend API.
