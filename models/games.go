@@ -20,25 +20,23 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // Game is an object representing the database table.
 type Game struct {
-	ID         int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Private    bool             `boil:"private" json:"private" toml:"private" yaml:"private"`
-	Cols       int16            `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
-	Rows       int16            `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
-	Map        types.Int64Array `boil:"map" json:"map,omitempty" toml:"map" yaml:"map,omitempty"`
-	Mines      null.Int16       `boil:"mines" json:"mines,omitempty" toml:"mines" yaml:"mines,omitempty"`
-	StartedAt  null.Time        `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
-	FinishedAt null.Time        `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
-	Won        null.Bool        `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
-	CreatorID  int64            `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
-	CreatedAt  null.Time        `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
-	UpdatedAt  null.Time        `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
-	R          *gameR           `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L          gameL            `boil:"-" json:"-" toml:"-" yaml:"-"`
+	ID         int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Private    bool      `boil:"private" json:"private" toml:"private" yaml:"private"`
+	Cols       int16     `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
+	Rows       int16     `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
+	Mines      int16     `boil:"mines" json:"mines" toml:"mines" yaml:"mines"`
+	StartedAt  null.Time `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
+	FinishedAt null.Time `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
+	Won        null.Bool `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
+	CreatorID  int64     `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
+	CreatedAt  null.Time `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt  null.Time `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
+	R          *gameR    `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L          gameL     `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GameColumns = struct {
@@ -46,7 +44,6 @@ var GameColumns = struct {
 	Private    string
 	Cols       string
 	Rows       string
-	Map        string
 	Mines      string
 	StartedAt  string
 	FinishedAt string
@@ -59,7 +56,6 @@ var GameColumns = struct {
 	Private:    "private",
 	Cols:       "cols",
 	Rows:       "rows",
-	Map:        "map",
 	Mines:      "mines",
 	StartedAt:  "started_at",
 	FinishedAt: "finished_at",
@@ -79,52 +75,6 @@ func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field
 func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
 func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
-type whereHelpertypes_Int64Array struct{ field string }
-
-func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-type whereHelpernull_Int16 struct{ field string }
-
-func (w whereHelpernull_Int16) EQ(x null.Int16) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int16) NEQ(x null.Int16) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int16) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int16) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int16) LT(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int16) LTE(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int16) GT(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int16) GTE(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
 
 type whereHelpernull_Bool struct{ field string }
 
@@ -154,8 +104,7 @@ var GameWhere = struct {
 	Private    whereHelperbool
 	Cols       whereHelperint16
 	Rows       whereHelperint16
-	Map        whereHelpertypes_Int64Array
-	Mines      whereHelpernull_Int16
+	Mines      whereHelperint16
 	StartedAt  whereHelpernull_Time
 	FinishedAt whereHelpernull_Time
 	Won        whereHelpernull_Bool
@@ -167,8 +116,7 @@ var GameWhere = struct {
 	Private:    whereHelperbool{field: `private`},
 	Cols:       whereHelperint16{field: `cols`},
 	Rows:       whereHelperint16{field: `rows`},
-	Map:        whereHelpertypes_Int64Array{field: `map`},
-	Mines:      whereHelpernull_Int16{field: `mines`},
+	Mines:      whereHelperint16{field: `mines`},
 	StartedAt:  whereHelpernull_Time{field: `started_at`},
 	FinishedAt: whereHelpernull_Time{field: `finished_at`},
 	Won:        whereHelpernull_Bool{field: `won`},
@@ -204,8 +152,8 @@ func (*gameR) NewStruct() *gameR {
 type gameL struct{}
 
 var (
-	gameColumns               = []string{"id", "private", "cols", "rows", "map", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
-	gameColumnsWithoutDefault = []string{"cols", "rows", "map", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
+	gameColumns               = []string{"id", "private", "cols", "rows", "mines", "started_at", "finished_at", "won", "creator_id", "created_at", "updated_at"}
+	gameColumnsWithoutDefault = []string{"cols", "rows", "mines", "started_at", "finished_at", "creator_id", "created_at", "updated_at"}
 	gameColumnsWithDefault    = []string{"id", "private", "won"}
 	gamePrimaryKeyColumns     = []string{"id"}
 )
@@ -214,8 +162,6 @@ type (
 	// GameSlice is an alias for a slice of pointers to Game.
 	// This should generally be used opposed to []Game.
 	GameSlice []*Game
-	// GameHook is the signature for custom Game hook methods
-	GameHook func(context.Context, boil.ContextExecutor, *Game) error
 
 	gameQuery struct {
 		*queries.Query
@@ -243,176 +189,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var gameBeforeInsertHooks []GameHook
-var gameBeforeUpdateHooks []GameHook
-var gameBeforeDeleteHooks []GameHook
-var gameBeforeUpsertHooks []GameHook
-
-var gameAfterInsertHooks []GameHook
-var gameAfterSelectHooks []GameHook
-var gameAfterUpdateHooks []GameHook
-var gameAfterDeleteHooks []GameHook
-var gameAfterUpsertHooks []GameHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Game) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Game) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Game) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Game) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Game) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Game) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Game) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Game) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Game) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddGameHook registers your hook function for all future operations.
-func AddGameHook(hookPoint boil.HookPoint, gameHook GameHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		gameBeforeInsertHooks = append(gameBeforeInsertHooks, gameHook)
-	case boil.BeforeUpdateHook:
-		gameBeforeUpdateHooks = append(gameBeforeUpdateHooks, gameHook)
-	case boil.BeforeDeleteHook:
-		gameBeforeDeleteHooks = append(gameBeforeDeleteHooks, gameHook)
-	case boil.BeforeUpsertHook:
-		gameBeforeUpsertHooks = append(gameBeforeUpsertHooks, gameHook)
-	case boil.AfterInsertHook:
-		gameAfterInsertHooks = append(gameAfterInsertHooks, gameHook)
-	case boil.AfterSelectHook:
-		gameAfterSelectHooks = append(gameAfterSelectHooks, gameHook)
-	case boil.AfterUpdateHook:
-		gameAfterUpdateHooks = append(gameAfterUpdateHooks, gameHook)
-	case boil.AfterDeleteHook:
-		gameAfterDeleteHooks = append(gameAfterDeleteHooks, gameHook)
-	case boil.AfterUpsertHook:
-		gameAfterUpsertHooks = append(gameAfterUpsertHooks, gameHook)
-	}
-}
-
 // One returns a single game record from the query.
 func (q gameQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Game, error) {
 	o := &Game{}
@@ -427,10 +203,6 @@ func (q gameQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Game, e
 		return nil, errors.Wrap(err, "models: failed to execute a one query for games")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -441,14 +213,6 @@ func (q gameQuery) All(ctx context.Context, exec boil.ContextExecutor) (GameSlic
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Game slice")
-	}
-
-	if len(gameAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -604,14 +368,6 @@ func (gameL) LoadCreator(ctx context.Context, e boil.ContextExecutor, singular b
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for players")
 	}
 
-	if len(gameAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -703,13 +459,6 @@ func (gameL) LoadGameBoardPoints(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for game_board_points")
 	}
 
-	if len(gameBoardPointAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.GameBoardPoints = resultSlice
 		for _, foreign := range resultSlice {
@@ -798,13 +547,6 @@ func (gameL) LoadGameOperations(ctx context.Context, e boil.ContextExecutor, sin
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for game_operations")
 	}
 
-	if len(gameOperationAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.GameOperations = resultSlice
 		for _, foreign := range resultSlice {
@@ -1036,10 +778,6 @@ func (o *Game) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		}
 	}
 
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(gameColumnsWithDefault, o)
 
 	key := makeCacheKey(columns, nzDefaults)
@@ -1102,7 +840,7 @@ func (o *Game) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		gameInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Game.
@@ -1116,9 +854,6 @@ func (o *Game) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	gameUpdateCacheMut.RLock()
 	cache, cached := gameUpdateCache[key]
@@ -1171,7 +906,7 @@ func (o *Game) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 		gameUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -1252,10 +987,6 @@ func (o *Game) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 			queries.SetScanner(&o.CreatedAt, currTime)
 		}
 		queries.SetScanner(&o.UpdatedAt, currTime)
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(gameColumnsWithDefault, o)
@@ -1359,7 +1090,7 @@ func (o *Game) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 		gameUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Game record with an executor.
@@ -1367,10 +1098,6 @@ func (o *Game) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 func (o *Game) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Game provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), gamePrimaryKeyMapping)
@@ -1389,10 +1116,6 @@ func (o *Game) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for games")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -1429,14 +1152,6 @@ func (o GameSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 		return 0, nil
 	}
 
-	if len(gameBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), gamePrimaryKeyMapping)
@@ -1459,14 +1174,6 @@ func (o GameSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for games")
-	}
-
-	if len(gameAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

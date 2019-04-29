@@ -145,8 +145,6 @@ type (
 	// GameBoardPointSlice is an alias for a slice of pointers to GameBoardPoint.
 	// This should generally be used opposed to []GameBoardPoint.
 	GameBoardPointSlice []*GameBoardPoint
-	// GameBoardPointHook is the signature for custom GameBoardPoint hook methods
-	GameBoardPointHook func(context.Context, boil.ContextExecutor, *GameBoardPoint) error
 
 	gameBoardPointQuery struct {
 		*queries.Query
@@ -174,176 +172,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var gameBoardPointBeforeInsertHooks []GameBoardPointHook
-var gameBoardPointBeforeUpdateHooks []GameBoardPointHook
-var gameBoardPointBeforeDeleteHooks []GameBoardPointHook
-var gameBoardPointBeforeUpsertHooks []GameBoardPointHook
-
-var gameBoardPointAfterInsertHooks []GameBoardPointHook
-var gameBoardPointAfterSelectHooks []GameBoardPointHook
-var gameBoardPointAfterUpdateHooks []GameBoardPointHook
-var gameBoardPointAfterDeleteHooks []GameBoardPointHook
-var gameBoardPointAfterUpsertHooks []GameBoardPointHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *GameBoardPoint) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *GameBoardPoint) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *GameBoardPoint) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *GameBoardPoint) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *GameBoardPoint) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *GameBoardPoint) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *GameBoardPoint) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *GameBoardPoint) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *GameBoardPoint) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range gameBoardPointAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddGameBoardPointHook registers your hook function for all future operations.
-func AddGameBoardPointHook(hookPoint boil.HookPoint, gameBoardPointHook GameBoardPointHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		gameBoardPointBeforeInsertHooks = append(gameBoardPointBeforeInsertHooks, gameBoardPointHook)
-	case boil.BeforeUpdateHook:
-		gameBoardPointBeforeUpdateHooks = append(gameBoardPointBeforeUpdateHooks, gameBoardPointHook)
-	case boil.BeforeDeleteHook:
-		gameBoardPointBeforeDeleteHooks = append(gameBoardPointBeforeDeleteHooks, gameBoardPointHook)
-	case boil.BeforeUpsertHook:
-		gameBoardPointBeforeUpsertHooks = append(gameBoardPointBeforeUpsertHooks, gameBoardPointHook)
-	case boil.AfterInsertHook:
-		gameBoardPointAfterInsertHooks = append(gameBoardPointAfterInsertHooks, gameBoardPointHook)
-	case boil.AfterSelectHook:
-		gameBoardPointAfterSelectHooks = append(gameBoardPointAfterSelectHooks, gameBoardPointHook)
-	case boil.AfterUpdateHook:
-		gameBoardPointAfterUpdateHooks = append(gameBoardPointAfterUpdateHooks, gameBoardPointHook)
-	case boil.AfterDeleteHook:
-		gameBoardPointAfterDeleteHooks = append(gameBoardPointAfterDeleteHooks, gameBoardPointHook)
-	case boil.AfterUpsertHook:
-		gameBoardPointAfterUpsertHooks = append(gameBoardPointAfterUpsertHooks, gameBoardPointHook)
-	}
-}
-
 // One returns a single gameBoardPoint record from the query.
 func (q gameBoardPointQuery) One(ctx context.Context, exec boil.ContextExecutor) (*GameBoardPoint, error) {
 	o := &GameBoardPoint{}
@@ -358,10 +186,6 @@ func (q gameBoardPointQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		return nil, errors.Wrap(err, "models: failed to execute a one query for game_board_points")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -372,14 +196,6 @@ func (q gameBoardPointQuery) All(ctx context.Context, exec boil.ContextExecutor)
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to GameBoardPoint slice")
-	}
-
-	if len(gameBoardPointAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -491,14 +307,6 @@ func (gameBoardPointL) LoadGame(ctx context.Context, e boil.ContextExecutor, sin
 	}
 	if err = results.Err(); err != nil {
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for games")
-	}
-
-	if len(gameBoardPointAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
 	}
 
 	if len(resultSlice) == 0 {
@@ -629,10 +437,6 @@ func (o *GameBoardPoint) Insert(ctx context.Context, exec boil.ContextExecutor, 
 		}
 	}
 
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(gameBoardPointColumnsWithDefault, o)
 
 	key := makeCacheKey(columns, nzDefaults)
@@ -695,7 +499,7 @@ func (o *GameBoardPoint) Insert(ctx context.Context, exec boil.ContextExecutor, 
 		gameBoardPointInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the GameBoardPoint.
@@ -709,9 +513,6 @@ func (o *GameBoardPoint) Update(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	gameBoardPointUpdateCacheMut.RLock()
 	cache, cached := gameBoardPointUpdateCache[key]
@@ -764,7 +565,7 @@ func (o *GameBoardPoint) Update(ctx context.Context, exec boil.ContextExecutor, 
 		gameBoardPointUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -845,10 +646,6 @@ func (o *GameBoardPoint) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 			queries.SetScanner(&o.CreatedAt, currTime)
 		}
 		queries.SetScanner(&o.UpdatedAt, currTime)
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(gameBoardPointColumnsWithDefault, o)
@@ -952,7 +749,7 @@ func (o *GameBoardPoint) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		gameBoardPointUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single GameBoardPoint record with an executor.
@@ -960,10 +757,6 @@ func (o *GameBoardPoint) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 func (o *GameBoardPoint) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no GameBoardPoint provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), gameBoardPointPrimaryKeyMapping)
@@ -982,10 +775,6 @@ func (o *GameBoardPoint) Delete(ctx context.Context, exec boil.ContextExecutor) 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for game_board_points")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -1022,14 +811,6 @@ func (o GameBoardPointSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 		return 0, nil
 	}
 
-	if len(gameBoardPointBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), gameBoardPointPrimaryKeyMapping)
@@ -1052,14 +833,6 @@ func (o GameBoardPointSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for game_board_points")
-	}
-
-	if len(gameBoardPointAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

@@ -457,31 +457,3 @@ func TestNewBoard(t *testing.T) {
 		}
 	}
 }
-
-func TestArrayToBoardAndBack(t *testing.T) {
-	board := [][]int{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}
-	rows := len(board)
-	cols := len(board[0])
-	flatBoard := make([]int, rows*cols)
-	for i := range board {
-		for j := range board[i] {
-			index := boardToArrayPoint(i, j, cols)
-			flatBoard[index] = board[i][j]
-		}
-	}
-	sameBoard := make([][]int, rows)
-	for i := range sameBoard {
-		sameBoard[i] = make([]int, cols)
-	}
-	for i := range flatBoard {
-		row, col := arrayToBoardPoint(i, cols)
-		sameBoard[row][col] = flatBoard[i]
-	}
-	for i := range board {
-		for j := range board[i] {
-			if board[i][j] != sameBoard[i][j] {
-				t.Fatalf("expected row %d col %d to be %d but was %d", i, j, board[i][j], sameBoard[i][j])
-			}
-		}
-	}
-}

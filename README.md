@@ -174,7 +174,7 @@ Updating a single row column in the normalized approach is way faster as well an
 
 While game creation is incredibly fast with the array approach, retrieving and updating a single value is significantly slower and performs too much allocations. Even though the allocations issue could be improved, it would require to start making weird queries that would be more error prone and (obviosly) would mean leaving relational rules behind.
 
-If I have to choose between faster game creations or faster game update, I choose the later thus concluding that the denormalized approach is discarded and I don't think that attempting to improve updates with updates is going to pay off.
+If I have to choose between faster game creations or faster game update, I choose the later thus concluding that the denormalized approach is discarded and I don't think that attempting to improve updates with arrays is going to pay off.
 
 
 
@@ -186,8 +186,9 @@ If I have to choose between faster game creations or faster game update, I choos
 - [x] Write the skeleton API
 - [x] Implement authentication.
 - [x] Implement the game backend API and benchmark the normalized and denormalized approach.
-- [ ] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
+- [x] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
 - [ ] Create a login page in the frontend.
 - [ ] Implement the *minesweep algebra* in javascript.
 - [ ] Implement a client for the backend API.
 - [ ] Create the game board in the frontend using the client backend API.
+- [ ] auto reveal 0 mines
