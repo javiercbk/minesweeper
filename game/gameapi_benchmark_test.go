@@ -5,63 +5,12 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-
-	"github.com/javiercbk/minesweeper/http/security"
-	"github.com/javiercbk/minesweeper/models"
-	testHelpers "github.com/javiercbk/minesweeper/testing"
-	"github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-
-	extErrors "github.com/pkg/errors"
 )
-
-const uniqueNameConstaintName = "idx_players_name"
-const abcHashed = "$2y$12$Fq0ne4S2xnhZTYE7p/veuOX3X6DlF1qZYeeHhK/PY39TP7//klYkW"
-const username = "benchmarkUsername"
-
-const gameRows = 100
-const gameCols = 100
-const gameMines = 99
-
-func TestMain(m *testing.M) {
-	testHelpers.InitializeDB(m)
-}
-
-func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUser) {
-	logger := testHelpers.NullLogger()
-	db, err := testHelpers.DB()
-	if err != nil {
-		t.Fatalf("error connecting to database: %v\n", err)
-	}
-	testPlayer := &models.Player{
-		Name:     name,
-		Password: abcHashed,
-	}
-	err = testPlayer.Insert(ctx, db, boil.Infer())
-	if err != nil {
-		cause := extErrors.Cause(err)
-		if pgerr, ok := cause.(*pq.Error); ok {
-			if pgerr.Constraint == uniqueNameConstaintName {
-				testPlayer, err = models.Players(qm.Where("name = ?", name)).One(ctx, db)
-				if err != nil {
-					t.Fatalf("error retrieving test user: %v\n", err)
-				}
-			}
-		} else {
-			t.Fatalf("error inserting test user: %v\n", err)
-		}
-	}
-	return NewAPI(logger, db), security.JWTUser{
-		ID:   testPlayer.ID,
-		Name: name,
-	}
-}
 
 // 10	 198611863 ns/op	 3883188 B/op	   50122 allocs/op
 func BenchmarkCreateGame(b *testing.B) {
 	ctx := context.Background()
-	api, user := setUp(ctx, b, username)
+	api, user, _ := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
@@ -79,9 +28,9 @@ func BenchmarkCreateGame(b *testing.B) {
 }
 
 // 10000	    177058 ns/op	    3324 B/op	      68 allocs/op
-func BenchmarkTableRowColRetrieval(b *testing.B) {
+func BenchmarkRetrieveRowCol(b *testing.B) {
 	ctx := context.Background()
-	api, user := setUp(ctx, b, username)
+	api, user, _ := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
@@ -98,7 +47,7 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		randomRow := random.Intn(gameRows - 1)
 		randomCol := random.Intn(gameCols - 1)
-		_, err = api.tableRowColRetrieval(ctx, user, pGame.ID, randomRow, randomCol)
+		_, err = api.retrieveRowCol(ctx, user, pGame.ID, randomRow, randomCol)
 		if err != nil {
 			b.Fatalf("error retrieving row col %v\n", err)
 		}
@@ -106,9 +55,9 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 }
 
 // 1000	   1636261 ns/op	    2326 B/op	      54 allocs/op
-func BenchmarkTableRowColUpdate(b *testing.B) {
+func BenchmarkUpdateRowCol(b *testing.B) {
 	ctx := context.Background()
-	api, user := setUp(ctx, b, username)
+	api, user, _ := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
@@ -125,7 +74,7 @@ func BenchmarkTableRowColUpdate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		randomRow := random.Intn(gameRows - 1)
 		randomCol := random.Intn(gameCols - 1)
-		err = api.tableUpdateRowCol(ctx, user, pGame.ID, randomRow, randomCol, 0)
+		err = api.updateRowCol(ctx, pGame.ID, randomRow, randomCol, 0)
 		if err != nil {
 			b.Fatalf("error updating row col %v\n", err)
 		}

@@ -18,7 +18,7 @@ CREATE TABLE games(
     private BOOLEAN NOT NULL DEFAULT FALSE,
     rows SMALLINT NOT NULL,
     cols SMALLINT NOT NULL,
-    mines SMALLINT,
+    mines SMALLINT NOT NULL,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
     won BOOLEAN DEFAULT FALSE,
@@ -37,6 +37,7 @@ CREATE TABLE game_operations(
     row SMALLINT NOT NULL,
     col SMALLINT NOT NULL,
     operation_id INTEGER NOT NULL,
+    mine_proximity SMALLINT NOT NULL,
     operation mine_operation NOT NULL,
     CONSTRAINT fk_game_operation_game FOREIGN KEY (game_id) REFERENCES games (id),
     CONSTRAINT fk_games_creator FOREIGN KEY (player_id) REFERENCES players (id)

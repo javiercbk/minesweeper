@@ -23,33 +23,36 @@ import (
 
 // GameOperation is an object representing the database table.
 type GameOperation struct {
-	ID          int64           `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GameID      int64           `boil:"game_id" json:"gameID" toml:"gameID" yaml:"gameID"`
-	PlayerID    int64           `boil:"player_id" json:"playerID" toml:"playerID" yaml:"playerID"`
-	OperationID int             `boil:"operation_id" json:"operationID" toml:"operationID" yaml:"operationID"`
-	Operation   string          `boil:"operation" json:"operation" toml:"operation" yaml:"operation"`
-	Row         int16           `boil:"row" json:"row" toml:"row" yaml:"row"`
-	Col         int16           `boil:"col" json:"col" toml:"col" yaml:"col"`
-	R           *gameOperationR `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L           gameOperationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
+	ID            int64           `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GameID        int64           `boil:"game_id" json:"gameID" toml:"gameID" yaml:"gameID"`
+	PlayerID      int64           `boil:"player_id" json:"playerID" toml:"playerID" yaml:"playerID"`
+	OperationID   int             `boil:"operation_id" json:"operationID" toml:"operationID" yaml:"operationID"`
+	Operation     string          `boil:"operation" json:"operation" toml:"operation" yaml:"operation"`
+	Row           int16           `boil:"row" json:"row" toml:"row" yaml:"row"`
+	Col           int16           `boil:"col" json:"col" toml:"col" yaml:"col"`
+	MineProximity int16           `boil:"mine_proximity" json:"mineProximity" toml:"mineProximity" yaml:"mineProximity"`
+	R             *gameOperationR `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L             gameOperationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GameOperationColumns = struct {
-	ID          string
-	GameID      string
-	PlayerID    string
-	OperationID string
-	Operation   string
-	Row         string
-	Col         string
+	ID            string
+	GameID        string
+	PlayerID      string
+	OperationID   string
+	Operation     string
+	Row           string
+	Col           string
+	MineProximity string
 }{
-	ID:          "id",
-	GameID:      "game_id",
-	PlayerID:    "player_id",
-	OperationID: "operation_id",
-	Operation:   "operation",
-	Row:         "row",
-	Col:         "col",
+	ID:            "id",
+	GameID:        "game_id",
+	PlayerID:      "player_id",
+	OperationID:   "operation_id",
+	Operation:     "operation",
+	Row:           "row",
+	Col:           "col",
+	MineProximity: "mine_proximity",
 }
 
 // Generated where
@@ -73,21 +76,23 @@ func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.f
 func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var GameOperationWhere = struct {
-	ID          whereHelperint64
-	GameID      whereHelperint64
-	PlayerID    whereHelperint64
-	OperationID whereHelperint
-	Operation   whereHelperstring
-	Row         whereHelperint16
-	Col         whereHelperint16
+	ID            whereHelperint64
+	GameID        whereHelperint64
+	PlayerID      whereHelperint64
+	OperationID   whereHelperint
+	Operation     whereHelperstring
+	Row           whereHelperint16
+	Col           whereHelperint16
+	MineProximity whereHelperint16
 }{
-	ID:          whereHelperint64{field: `id`},
-	GameID:      whereHelperint64{field: `game_id`},
-	PlayerID:    whereHelperint64{field: `player_id`},
-	OperationID: whereHelperint{field: `operation_id`},
-	Operation:   whereHelperstring{field: `operation`},
-	Row:         whereHelperint16{field: `row`},
-	Col:         whereHelperint16{field: `col`},
+	ID:            whereHelperint64{field: `id`},
+	GameID:        whereHelperint64{field: `game_id`},
+	PlayerID:      whereHelperint64{field: `player_id`},
+	OperationID:   whereHelperint{field: `operation_id`},
+	Operation:     whereHelperstring{field: `operation`},
+	Row:           whereHelperint16{field: `row`},
+	Col:           whereHelperint16{field: `col`},
+	MineProximity: whereHelperint16{field: `mine_proximity`},
 }
 
 // GameOperationRels is where relationship names are stored.
@@ -114,8 +119,8 @@ func (*gameOperationR) NewStruct() *gameOperationR {
 type gameOperationL struct{}
 
 var (
-	gameOperationColumns               = []string{"id", "game_id", "player_id", "operation_id", "operation", "row", "col"}
-	gameOperationColumnsWithoutDefault = []string{"game_id", "player_id", "operation_id", "operation", "row", "col"}
+	gameOperationColumns               = []string{"id", "game_id", "player_id", "operation_id", "operation", "row", "col", "mine_proximity"}
+	gameOperationColumnsWithoutDefault = []string{"game_id", "player_id", "operation_id", "operation", "row", "col", "mine_proximity"}
 	gameOperationColumnsWithDefault    = []string{"id"}
 	gameOperationPrimaryKeyColumns     = []string{"id"}
 )

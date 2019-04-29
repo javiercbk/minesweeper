@@ -6,7 +6,7 @@ import (
 )
 
 // OperationType is a minesweeper algebra operation type
-type OperationType int
+type OperationType = int
 
 const (
 	// OpUnknown is an unknown operation used to identify a void operation
@@ -27,7 +27,7 @@ var (
 )
 
 // MineProximity is the mine proximity value of a point in space
-type MineProximity int
+type MineProximity = int
 
 // operationExecution is the behaviour of all the operations of the minesweep algebra
 type operationExecution func(mineProximity MineProximity) (MineProximity, error)
@@ -117,8 +117,14 @@ func Compose(oper1, oper2 Operation) CompositionResult {
 	return result
 }
 
-// ComposeMulti composes an array of operations with a single operation
-func ComposeMulti(operations []Operation, oper Operation) CompositionResult {
-	//TODO: need to Compose an array of operations with a single operation
-	return CompositionResult{}
+// ShouldOperationApply decides whether an operation should be applied
+func ShouldOperationApply(operations []Operation, oper Operation) bool {
+	for _, o := range operations {
+		cr := Compose(o, oper)
+		if cr.Delta1.opType == OpUnknown {
+			// operation has been un applied
+			return false
+		}
+	}
+	return true
 }

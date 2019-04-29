@@ -24,19 +24,19 @@ import (
 
 // Game is an object representing the database table.
 type Game struct {
-	ID         int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Private    bool       `boil:"private" json:"private" toml:"private" yaml:"private"`
-	Cols       int16      `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
-	Rows       int16      `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
-	Mines      null.Int16 `boil:"mines" json:"mines,omitempty" toml:"mines" yaml:"mines,omitempty"`
-	StartedAt  null.Time  `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
-	FinishedAt null.Time  `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
-	Won        null.Bool  `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
-	CreatorID  int64      `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
-	CreatedAt  null.Time  `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
-	UpdatedAt  null.Time  `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
-	R          *gameR     `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L          gameL      `boil:"-" json:"-" toml:"-" yaml:"-"`
+	ID         int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Private    bool      `boil:"private" json:"private" toml:"private" yaml:"private"`
+	Cols       int16     `boil:"cols" json:"cols" toml:"cols" yaml:"cols"`
+	Rows       int16     `boil:"rows" json:"rows" toml:"rows" yaml:"rows"`
+	Mines      int16     `boil:"mines" json:"mines" toml:"mines" yaml:"mines"`
+	StartedAt  null.Time `boil:"started_at" json:"startedAt,omitempty" toml:"startedAt" yaml:"startedAt,omitempty"`
+	FinishedAt null.Time `boil:"finished_at" json:"finishedAt,omitempty" toml:"finishedAt" yaml:"finishedAt,omitempty"`
+	Won        null.Bool `boil:"won" json:"won,omitempty" toml:"won" yaml:"won,omitempty"`
+	CreatorID  int64     `boil:"creator_id" json:"creatorID" toml:"creatorID" yaml:"creatorID"`
+	CreatedAt  null.Time `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt  null.Time `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
+	R          *gameR    `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L          gameL     `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GameColumns = struct {
@@ -76,29 +76,6 @@ func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field
 func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
-type whereHelpernull_Int16 struct{ field string }
-
-func (w whereHelpernull_Int16) EQ(x null.Int16) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int16) NEQ(x null.Int16) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int16) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int16) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int16) LT(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int16) LTE(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int16) GT(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int16) GTE(x null.Int16) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelpernull_Bool struct{ field string }
 
 func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
@@ -127,7 +104,7 @@ var GameWhere = struct {
 	Private    whereHelperbool
 	Cols       whereHelperint16
 	Rows       whereHelperint16
-	Mines      whereHelpernull_Int16
+	Mines      whereHelperint16
 	StartedAt  whereHelpernull_Time
 	FinishedAt whereHelpernull_Time
 	Won        whereHelpernull_Bool
@@ -139,7 +116,7 @@ var GameWhere = struct {
 	Private:    whereHelperbool{field: `private`},
 	Cols:       whereHelperint16{field: `cols`},
 	Rows:       whereHelperint16{field: `rows`},
-	Mines:      whereHelpernull_Int16{field: `mines`},
+	Mines:      whereHelperint16{field: `mines`},
 	StartedAt:  whereHelpernull_Time{field: `started_at`},
 	FinishedAt: whereHelpernull_Time{field: `finished_at`},
 	Won:        whereHelpernull_Bool{field: `won`},
