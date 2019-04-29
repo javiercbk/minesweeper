@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
 }
 
-func setUp(ctx context.Context, t *testing.T) (*Handler, *models.Player) {
+func setUp(ctx context.Context, t *testing.T) (API, *models.Player) {
 	logger := testHelpers.NullLogger()
 	db, err := testHelpers.DB()
 	if err != nil {
@@ -33,12 +33,12 @@ func setUp(ctx context.Context, t *testing.T) (*Handler, *models.Player) {
 	if err != nil {
 		t.Fatalf("error inserting test user: %v\n", err)
 	}
-	return NewHandler(logger, db), testPlayer
+	return NewAPI(logger, db), testPlayer
 }
 
 func TestAuth(t *testing.T) {
 	ctx := context.Background()
-	handler, testPlayer := setUp(ctx, t)
+	api, testPlayer := setUp(ctx, t)
 	tests := []struct {
 		Name     string
 		Password string
@@ -66,7 +66,7 @@ func TestAuth(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		tokenResponse, err := handler.CreateToken(ctx, jwtSecret, Credentials{
+		tokenResponse, err := api.CreateToken(ctx, jwtSecret, Credentials{
 			Name:     test.Name,
 			Password: test.Password,
 		})

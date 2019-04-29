@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
 }
 
-func setUp(ctx context.Context, t testing.TB, name string) (*Handler, security.JWTUser) {
+func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUser) {
 	logger := testHelpers.NullLogger()
 	db, err := testHelpers.DB()
 	if err != nil {
@@ -52,7 +52,7 @@ func setUp(ctx context.Context, t testing.TB, name string) (*Handler, security.J
 			t.Fatalf("error inserting test user: %v\n", err)
 		}
 	}
-	return NewHandler(logger, db), security.JWTUser{
+	return NewAPI(logger, db), security.JWTUser{
 		ID:   testPlayer.ID,
 		Name: name,
 	}
@@ -61,7 +61,7 @@ func setUp(ctx context.Context, t testing.TB, name string) (*Handler, security.J
 // 10	 198611863 ns/op	 3883188 B/op	   50122 allocs/op
 func BenchmarkCreateGame(b *testing.B) {
 	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
+	api, user := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
@@ -71,7 +71,7 @@ func BenchmarkCreateGame(b *testing.B) {
 	// do not count first insertion time
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		err := handler.CreateGame(ctx, user, &pGame)
+		err := api.CreateGame(ctx, user, &pGame)
 		if err != nil {
 			b.Fatalf("error creating game %v\n", err)
 		}
@@ -81,14 +81,14 @@ func BenchmarkCreateGame(b *testing.B) {
 // 10000	    177058 ns/op	    3324 B/op	      68 allocs/op
 func BenchmarkTableRowColRetrieval(b *testing.B) {
 	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
+	api, user := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
 		Mines:   gameMines,
 		Private: false,
 	}
-	err := handler.CreateGame(ctx, user, &pGame)
+	err := api.CreateGame(ctx, user, &pGame)
 	if err != nil {
 		b.Fatalf("error creating game %v\n", err)
 	}
@@ -98,7 +98,7 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		randomRow := random.Intn(gameRows - 1)
 		randomCol := random.Intn(gameCols - 1)
-		_, err = handler.tableRowColRetrieval(ctx, user, pGame.ID, randomRow, randomCol)
+		_, err = api.tableRowColRetrieval(ctx, user, pGame.ID, randomRow, randomCol)
 		if err != nil {
 			b.Fatalf("error retrieving row col %v\n", err)
 		}
@@ -108,14 +108,14 @@ func BenchmarkTableRowColRetrieval(b *testing.B) {
 // 1000	   1636261 ns/op	    2326 B/op	      54 allocs/op
 func BenchmarkTableRowColUpdate(b *testing.B) {
 	ctx := context.Background()
-	handler, user := setUp(ctx, b, username)
+	api, user := setUp(ctx, b, username)
 	pGame := ProspectGame{
 		Rows:    gameRows,
 		Cols:    gameCols,
 		Mines:   gameMines,
 		Private: false,
 	}
-	err := handler.CreateGame(ctx, user, &pGame)
+	err := api.CreateGame(ctx, user, &pGame)
 	if err != nil {
 		b.Fatalf("error creating game %v\n", err)
 	}
@@ -125,7 +125,7 @@ func BenchmarkTableRowColUpdate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		randomRow := random.Intn(gameRows - 1)
 		randomCol := random.Intn(gameCols - 1)
-		err = handler.tableUpdateRowCol(ctx, user, pGame.ID, randomRow, randomCol, 0)
+		err = api.tableUpdateRowCol(ctx, user, pGame.ID, randomRow, randomCol, 0)
 		if err != nil {
 			b.Fatalf("error updating row col %v\n", err)
 		}

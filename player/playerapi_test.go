@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
 }
 
-func setUp(ctx context.Context, t *testing.T, existingUserName string) *Handler {
+func setUp(ctx context.Context, t *testing.T, existingUserName string) API {
 	logger := testHelpers.NullLogger()
 	db, err := testHelpers.DB()
 	if err != nil {
@@ -36,12 +36,12 @@ func setUp(ctx context.Context, t *testing.T, existingUserName string) *Handler 
 	if err != nil {
 		t.Fatalf("error inserting test user: %v\n", err)
 	}
-	return NewHandler(logger, db)
+	return NewAPI(logger, db)
 }
 
 func TestCreatePlayer(t *testing.T) {
 	ctx := context.Background()
-	handler := setUp(ctx, t, username)
+	api := setUp(ctx, t, username)
 	tests := []struct {
 		pPlayer ProspectPlayer
 		err     error
@@ -65,7 +65,7 @@ func TestCreatePlayer(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		err := handler.CreatePlayer(ctx, &test.pPlayer)
+		err := api.CreatePlayer(ctx, &test.pPlayer)
 		if test.err != err {
 			t.Fatalf("failed test %d: expected error to be %v but was %v\n", i, test.err, err)
 		}
@@ -73,7 +73,7 @@ func TestCreatePlayer(t *testing.T) {
 			if test.pPlayer.ID == 0 {
 				t.Fatalf("failed test %d: expected id to not be zero but was %d\n", i, test.pPlayer.ID)
 			}
-			player, err := models.FindPlayer(ctx, handler.db, test.pPlayer.ID)
+			player, err := models.FindPlayer(ctx, api.db, test.pPlayer.ID)
 			if err != nil {
 				t.Fatalf("failed test %d: expected error to be nil but was %v\n", i, err)
 			}
