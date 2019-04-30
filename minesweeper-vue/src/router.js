@@ -1,8 +1,28 @@
 import Vue from "vue";
 import Router from "vue-router";
-import Home from "./views/Home.vue";
+import Index from '@/views/ms-index.js';
 
 Vue.use(Router);
+
+const scrollBehavior = (to, from, savedPosition) => {
+  if (savedPosition) {
+    return savedPosition;
+  }
+  if (to.hash) {
+    return {
+      selector: to.hash
+    };
+  }
+  return {
+    x: 0,
+    y: 0
+  };
+};
+
+
+const GameSearchCreate = () => import(/* webpackChunkName: 'game' */ './views/game/game-search-create.vue');
+const GameBoard = () => import(/* webpackChunkName: 'game' */ './views/game/game-board.js');
+
 
 export default new Router({
   mode: "history",
@@ -10,17 +30,64 @@ export default new Router({
   routes: [
     {
       path: "/",
-      name: "home",
-      component: Home
+      name: "index",
+      component: Index
     },
     {
-      path: "/about",
-      name: "about",
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () =>
-        import(/* webpackChunkName: "about" */ "./views/About.vue")
+      path: "/games",
+      name: "game-seach-create",
+      component: GameSearchCreate,
+    },
+    {
+      path: "/games/:entityId",
+      name: "game-board",
+      component: GameBoard,
+      props: true,
     }
   ]
 });
+
+const routerSecurityCheck = (user, to, from, next, isFirstTime) => {
+  let nextResolve;
+  if (user) {
+    if (to.meta && to.meta.public && to.name !== 'index') {
+      nextResolve = {
+        name: 'index'
+      };
+    } else if (to.meta.role) {
+      const missingRole = user.roles.indexOf(to.meta.role) === -1;
+      if (missingRole) {
+        // user has not enough privileged to see the view
+        // TODO define what to do here
+        nextResolve = {
+          name: 'index'
+        };
+      }
+    }
+  } else if (to.meta && !to.meta.public) {
+    if (isFirstTime) {
+      store._actions['session/setFirstRoute'][0](to);
+    }
+    nextResolve = {
+      name: 'index'
+    };
+  }
+  next(nextResolve);
+};
+
+router.beforeEach((to, from, next) => {
+  const userRequested = store.getters['session/userRequested'];
+  store._actions['notifications/clearScopedNotifications'][0]().then(() => {});
+  if (!userRequested) {
+    store._actions['session/requestUserLogged'][0]().then(() => {
+      // the first route will be setted here
+      const user = store.getters['session/user'];
+      routerSecurityCheck(user, to, from, next, true);
+    });
+    return;
+  }
+  const user = store.getters['session/user'];
+  routerSecurityCheck(user, to, from, next, false);
+});
+
+export default router;
