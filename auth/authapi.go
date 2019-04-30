@@ -28,14 +28,18 @@ var ErrBadCredentials = response.HTTPError{
 }
 
 // API is the auth API
-type API struct {
+type API interface {
+	CreateToken(ctx context.Context, jwtSecret string, auth Credentials) (TokenResponse, error)
+}
+
+type api struct {
 	logger *log.Logger
 	db     *sql.DB
 }
 
 // NewAPI creates a new auth API
 func NewAPI(logger *log.Logger, db *sql.DB) API {
-	return API{
+	return api{
 		logger: logger,
 		db:     db,
 	}
@@ -53,7 +57,7 @@ type TokenResponse struct {
 }
 
 // CreateToken creates an authentication token that can be used to authenticate with the rest api
-func (api API) CreateToken(ctx context.Context, jwtSecret string, auth Credentials) (TokenResponse, error) {
+func (api api) CreateToken(ctx context.Context, jwtSecret string, auth Credentials) (TokenResponse, error) {
 	tResponse := TokenResponse{}
 	player, err := models.Players(qm.Where("name = ?", auth.Name)).One(ctx, api.db)
 	if err != nil && err != sql.ErrNoRows {

@@ -77,7 +77,7 @@ type ProspectGame struct {
 type OperationResult struct {
 	Row           int `json:"row"`
 	Col           int `json:"col"`
-	MineProximity int `json:"mineProximity,omitempty"`
+	MineProximity int `json:"mineProximity"`
 	PointState    int `json:"pointState"`
 }
 
@@ -94,8 +94,8 @@ type Operation struct {
 
 // Status is the game status
 type Status struct {
-	Rows  int     `json:"-"`
-	Cols  int     `json:"-"`
+	Rows  int     `json:"rows"`
+	Cols  int     `json:"cols"`
 	Won   bool    `json:"won"`
 	Lost  bool    `json:"lost"`
 	Board [][]int `json:"board,omitempty"`

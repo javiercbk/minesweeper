@@ -31,14 +31,18 @@ func HashPassword(password string) (string, error) {
 }
 
 // API is the player API
-type API struct {
+type API interface {
+	CreatePlayer(ctx context.Context, pPlayer *ProspectPlayer) error
+}
+
+type api struct {
 	logger *log.Logger
 	db     *sql.DB
 }
 
 // NewAPI creates a new player API
 func NewAPI(logger *log.Logger, db *sql.DB) API {
-	return API{
+	return api{
 		logger: logger,
 		db:     db,
 	}
@@ -52,7 +56,7 @@ type ProspectPlayer struct {
 }
 
 // CreatePlayer creates a player in the database
-func (api API) CreatePlayer(ctx context.Context, pPlayer *ProspectPlayer) error {
+func (api api) CreatePlayer(ctx context.Context, pPlayer *ProspectPlayer) error {
 	hashPassword, err := HashPassword(pPlayer.Password)
 	if err != nil {
 		api.logger.Printf("error hashing password: %v\n", err)
