@@ -358,7 +358,7 @@ func (api API) commitOperation(ctx context.Context, user security.JWTUser, confi
 	} else if mineProximity >= 0 && mineProximity < 9 {
 		// if mine proximity is not a mine, then check if the game was won
 		exists, err := models.GameBoardPoints(
-			qm.Where("game_id = ? AND ((mine_proximity < -1 AND mine_proximity > -11) OR mine_proximity = 9)", confirmation.Operation.GameID),
+			qm.Where("game_id = ? AND ((mine_proximity <= -1 AND mine_proximity > -10) OR mine_proximity = 9)", confirmation.Operation.GameID),
 		).Exists(ctx, tx)
 		if err != nil {
 			api.logger.Printf("error checking if the game was won: %v. Rolling back operation insertion\n", err)

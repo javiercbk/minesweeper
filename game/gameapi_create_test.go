@@ -150,9 +150,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				Private:   true,
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -174,9 +174,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				Private:   false,
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -202,9 +202,9 @@ func TestApplyRevealOperations(t *testing.T) {
 			// should not allow to apply operations on finished games
 			finished: true,
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -227,9 +227,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				FinishedAt: null.NewTime(time.Now().UTC(), true),
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID: 1,
@@ -252,9 +252,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				Private:   false,
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -278,9 +278,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				Private:   false,
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -302,9 +302,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				},
 			},
 			expectedBoard: [][]int{
-				{1, -9, -2},
+				{1, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 		},
 		{
@@ -317,9 +317,9 @@ func TestApplyRevealOperations(t *testing.T) {
 				Private: false,
 			},
 			initialBoard: [][]int{
-				{-2, -9, -2},
+				{-2, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
 			},
 			operation: Operation{
 				ID:  1,
@@ -341,9 +341,99 @@ func TestApplyRevealOperations(t *testing.T) {
 				},
 			},
 			expectedBoard: [][]int{
-				{1, -9, -2},
+				{1, -10, -2},
 				{-2, -3, -3},
-				{-1, -2, -9},
+				{-1, -2, -10},
+			},
+		},
+		{
+			game: &models.Game{
+				CreatorID: otherUser.ID,
+				Rows:      int16(3),
+				Cols:      int16(3),
+				Mines:     int16(2),
+				// should allow other user to play non private game
+				Private: false,
+			},
+			initialBoard: [][]int{
+				{0, -2, -10},
+				{0, 1, 1},
+				{0, 0, 0},
+			},
+			operation: Operation{
+				ID:  1,
+				Row: 0,
+				Col: 1,
+				Op:  algebra.OpReveal,
+			},
+			expectedConfirmation: OperationConfirmation{
+				Operation: Operation{
+					ID:      1,
+					Row:     0,
+					Col:     1,
+					Op:      algebra.OpReveal,
+					Applied: true,
+				},
+				Status: Status{
+					Won:  true,
+					Rows: 3,
+					Cols: 3,
+					Board: [][]int{
+						{0, 1, -10},
+						{0, 1, 1},
+						{0, 0, 0},
+					},
+				},
+			},
+			expectedBoard: [][]int{
+				{0, 1, -10},
+				{0, 1, 1},
+				{0, 0, 0},
+			},
+		},
+		{
+			game: &models.Game{
+				CreatorID: otherUser.ID,
+				Rows:      int16(3),
+				Cols:      int16(3),
+				Mines:     int16(2),
+				// should allow other user to play non private game
+				Private: false,
+			},
+			initialBoard: [][]int{
+				{0, -2, -10},
+				{0, 1, 1},
+				{0, 0, 0},
+			},
+			operation: Operation{
+				ID:  1,
+				Row: 0,
+				Col: 2,
+				Op:  algebra.OpReveal,
+			},
+			expectedConfirmation: OperationConfirmation{
+				Operation: Operation{
+					ID:      1,
+					Row:     0,
+					Col:     2,
+					Op:      algebra.OpReveal,
+					Applied: true,
+				},
+				Status: Status{
+					Lost: true,
+					Rows: 3,
+					Cols: 3,
+					Board: [][]int{
+						{0, -2, 9},
+						{0, 1, 1},
+						{0, 0, 0},
+					},
+				},
+			},
+			expectedBoard: [][]int{
+				{0, -2, 9},
+				{0, 1, 1},
+				{0, 0, 0},
 			},
 		},
 	}
@@ -370,6 +460,15 @@ func TestApplyRevealOperations(t *testing.T) {
 			err = assertOperationConfirmation(test.expectedConfirmation, confirmation)
 			if err != nil {
 				t.Fatalf("test %d failed: %s\n", i, err.Error())
+			}
+			if test.expectedConfirmation.Status.Won || test.expectedConfirmation.Status.Lost {
+				game, err := models.FindGame(ctx, api.db, test.game.ID)
+				if err != nil {
+					t.Fatalf("test %d, failed: error retrieving game %v\n", i, err)
+				}
+				if !game.FinishedAt.Valid {
+					t.Fatalf("test %d, failed: error game was not marked as finished\n", i)
+				}
 			}
 			board, err := retrieveFullBoard(ctx, api.db, test.game.ID, int(test.game.Rows), int(test.game.Cols))
 			if err != nil {
