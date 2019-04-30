@@ -300,6 +300,7 @@ func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 					return err
 				}
 				confirmation.Operation.Applied = true
+				confirmation.Operation.Result = []OperationResult{buildOperationResult(oper, newMineProximity)}
 				break
 			}
 		} else {
@@ -669,15 +670,18 @@ func proximityToState(p algebra.MineProximity) int {
 func markOperationNotApplied(confirmation *OperationConfirmation, newMineProximity algebra.MineProximity, oper Operation) {
 	confirmation.Operation.ID = 0
 	confirmation.Operation.Applied = false
+	confirmation.Operation.Result = []OperationResult{buildOperationResult(oper, newMineProximity)}
+}
+
+func buildOperationResult(oper Operation, mp algebra.MineProximity) OperationResult {
 	opResult := OperationResult{
 		Row:        oper.Row,
 		Col:        oper.Col,
-		PointState: proximityToState(newMineProximity),
+		PointState: proximityToState(mp),
 	}
-	if newMineProximity >= 0 {
+	if mp >= 0 {
 		// only show mine proximity if already revealed
-		opResult.MineProximity = newMineProximity
+		opResult.MineProximity = mp
 	}
-	confirmation.Operation.Applied = false
-	confirmation.Operation.Result = []OperationResult{opResult}
+	return opResult
 }

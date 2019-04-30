@@ -87,6 +87,14 @@ func TestApplyMarkOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpMark,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           0,
+							MineProximity: 0,
+							PointState:    StateSuspectMine,
+						},
+					},
 				},
 				Status: Status{
 					Rows: 3,
@@ -126,6 +134,14 @@ func TestApplyMarkOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpMark,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           0,
+							MineProximity: 0,
+							PointState:    StateMarkedMine,
+						},
+					},
 				},
 				Status: Status{
 					Rows: 3,
@@ -165,6 +181,14 @@ func TestApplyMarkOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpMark,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           0,
+							MineProximity: 0,
+							PointState:    StateNotRevealed,
+						},
+					},
 				},
 				Status: Status{
 					Rows: 3,

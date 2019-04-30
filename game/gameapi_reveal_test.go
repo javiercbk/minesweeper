@@ -270,6 +270,14 @@ func TestApplyRevealOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpReveal,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           0,
+							MineProximity: 1,
+							PointState:    StateRevealed,
+						},
+					},
 				},
 				Status: Status{
 					Rows: 3,
@@ -309,6 +317,14 @@ func TestApplyRevealOperations(t *testing.T) {
 					Col:     0,
 					Op:      algebra.OpReveal,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           0,
+							MineProximity: 1,
+							PointState:    StateRevealed,
+						},
+					},
 				},
 				Status: Status{
 					Rows: 3,
@@ -348,6 +364,14 @@ func TestApplyRevealOperations(t *testing.T) {
 					Col:     1,
 					Op:      algebra.OpReveal,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           1,
+							MineProximity: 1,
+							PointState:    StateRevealed,
+						},
+					},
 				},
 				Status: Status{
 					Won:  true,
@@ -393,6 +417,14 @@ func TestApplyRevealOperations(t *testing.T) {
 					Col:     2,
 					Op:      algebra.OpReveal,
 					Applied: true,
+					Result: []OperationResult{
+						{
+							Row:           0,
+							Col:           2,
+							MineProximity: 9,
+							PointState:    StateRevealed,
+						},
+					},
 				},
 				Status: Status{
 					Lost: true,
