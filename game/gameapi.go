@@ -220,6 +220,7 @@ func (api API) applyOperation(ctx context.Context, user security.JWTUser, oper O
 
 func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, oper Operation, confirmation *OperationConfirmation) error {
 	var gameOperations models.GameOperationSlice
+	var mineProximity algebra.MineProximity
 	operationID := oper.ID
 	clientOperation, err := algebra.NewOperation(oper.Op, oper.Row, oper.Col)
 	if err != nil {
@@ -250,20 +251,20 @@ func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 		}
 		confirmation.DeltaOperations = deltaOperations
 		confirmation.Operation.GameID = oper.GameID
-		if opApplied {
-			// step 3a1 => retrieve the current mine proximity value
-			var mineProximity, newMineProximity algebra.MineProximity
-			mineProximity, err = api.retrieveRowCol(ctx, user, oper.GameID, oper.Row, oper.Col)
-			if err != nil {
-				if err == ErrInvalidRowCols {
-					err = response.HTTPError{
-						Code:    http.StatusBadRequest,
-						Message: err.Error(),
-					}
+		// step 3 => retrieve the current mine proximity value
+		mineProximity, err = api.retrieveRowCol(ctx, user, oper.GameID, oper.Row, oper.Col)
+		if err != nil {
+			if err == ErrInvalidRowCols {
+				err = response.HTTPError{
+					Code:    http.StatusBadRequest,
+					Message: err.Error(),
 				}
-				return err
 			}
-			// step 3a1 => apply the operation with to the current value
+			return err
+		}
+		if opApplied {
+			var newMineProximity algebra.MineProximity
+			// step 4a1 => apply the operation with to the current value
 			newMineProximity, err = clientOperation.Exec(mineProximity)
 			if err != nil {
 				// ErrOperationOutOfBounds
@@ -273,21 +274,10 @@ func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 				}
 				return err
 			}
-			// step 3a1 => if the mine proximity is the same, after the operation, then don't apply the operation
+			// step 4a2 => if the mine proximity is the same, after the operation, then don't apply the operation
 			if newMineProximity == mineProximity {
 				// operation had no action, mark as not applied
-				confirmation.Operation.ID = 0
-				confirmation.Operation.Applied = false
-				opResult := OperationResult{
-					Row:        oper.Row,
-					Col:        oper.Col,
-					PointState: proximityToState(newMineProximity),
-				}
-				if newMineProximity <= 0 {
-					opResult.MineProximity = newMineProximity
-				}
-				confirmation.Operation.Applied = false
-				confirmation.Operation.Result = []OperationResult{opResult}
+				markOperationNotApplied(confirmation, mineProximity, oper)
 				break
 			} else {
 				// the mine proximity is different so the operation changes the actual value.
@@ -310,8 +300,13 @@ func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 					return err
 				}
 				confirmation.Operation.Applied = true
+				confirmation.Operation.Result = []OperationResult{buildOperationResult(oper, newMineProximity)}
 				break
 			}
+		} else {
+			// operation should not be applied
+			markOperationNotApplied(confirmation, mineProximity, oper)
+			break
 		}
 	}
 	return ctx.Err()
@@ -589,18 +584,19 @@ func composeServerClient(gameOperations models.GameOperationSlice, gameID int64,
 			Col:        int(o.Col),
 			PointState: proximityToState(int(o.MineProximity)),
 		}
-		if o.MineProximity <= 0 {
+		if o.MineProximity >= 0 {
 			opRes.MineProximity = int(o.MineProximity)
 		}
 		// we ignore this error because server operations are guaranteed to be valid
 		serverOperations[i], _ = toAlgebraOperation(o)
 		deltaOperations[i] = Operation{
-			ID:     o.OperationID,
-			GameID: gameID,
-			Row:    int(o.Row),
-			Col:    int(o.Col),
-			Op:     operationType(o.Operation),
-			Result: []OperationResult{opRes},
+			ID:      o.OperationID,
+			GameID:  gameID,
+			Row:     int(o.Row),
+			Col:     int(o.Col),
+			Op:      operationType(o.Operation),
+			Applied: true,
+			Result:  []OperationResult{opRes},
 		}
 		// if there are older operations, calculate the new id for the client operation
 		newID = o.OperationID + 1
@@ -669,4 +665,23 @@ func proximityToState(p algebra.MineProximity) int {
 		return StateNotRevealed
 	}
 	return StateRevealed
+}
+
+func markOperationNotApplied(confirmation *OperationConfirmation, newMineProximity algebra.MineProximity, oper Operation) {
+	confirmation.Operation.ID = 0
+	confirmation.Operation.Applied = false
+	confirmation.Operation.Result = []OperationResult{buildOperationResult(oper, newMineProximity)}
+}
+
+func buildOperationResult(oper Operation, mp algebra.MineProximity) OperationResult {
+	opResult := OperationResult{
+		Row:        oper.Row,
+		Col:        oper.Col,
+		PointState: proximityToState(mp),
+	}
+	if mp >= 0 {
+		// only show mine proximity if already revealed
+		opResult.MineProximity = mp
+	}
+	return opResult
 }
