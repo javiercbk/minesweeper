@@ -156,6 +156,56 @@ func TestApplyRevealOperations(t *testing.T) {
 			},
 		},
 		{
+			// reveal should throw an error when value is marked
+			game: &models.Game{
+				CreatorID: user.ID,
+				Rows:      int16(3),
+				Cols:      int16(3),
+				Mines:     int16(2),
+				Private:   false,
+			},
+			initialBoard: [][]int{
+				{-22, -10, -2},
+				{-2, -3, -3},
+				{-1, -2, -10},
+			},
+			operation: Operation{
+				ID:  1,
+				Row: 0,
+				Col: 0,
+				Op:  algebra.OpReveal,
+			},
+			err: response.HTTPError{
+				Code:    http.StatusBadRequest,
+				Message: algebra.ErrOperationOutOfBounds.Error(),
+			},
+		},
+		{
+			// reveal should throw an error when value is marked
+			game: &models.Game{
+				CreatorID: user.ID,
+				Rows:      int16(3),
+				Cols:      int16(3),
+				Mines:     int16(2),
+				Private:   false,
+			},
+			initialBoard: [][]int{
+				{-12, -10, -2},
+				{-2, -3, -3},
+				{-1, -2, -10},
+			},
+			operation: Operation{
+				ID:  1,
+				Row: 0,
+				Col: 0,
+				Op:  algebra.OpReveal,
+			},
+			err: response.HTTPError{
+				Code:    http.StatusBadRequest,
+				Message: algebra.ErrOperationOutOfBounds.Error(),
+			},
+		},
+		{
 			// reveal should have no effect
 			game: &models.Game{
 				CreatorID: user.ID,
