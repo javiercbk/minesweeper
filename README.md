@@ -191,4 +191,5 @@ If I have to choose between faster game creations or faster game update, I choos
 - [ ] Implement the *minesweep algebra* in javascript.
 - [ ] Implement a client for the backend API.
 - [ ] Create the game board in the frontend using the client backend API.
+- [ ] Add request validation unit test.
 - [ ] auto reveal 0 mines
