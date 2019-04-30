@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/javiercbk/minesweeper/http/security"
 	"github.com/javiercbk/minesweeper/models"
@@ -24,6 +25,17 @@ const anotherUsername = "testUsername"
 const gameRows = 100
 const gameCols = 100
 const gameMines = 99
+
+type gameTest struct {
+	game                 *models.Game
+	finished             bool
+	initialBoard         [][]int
+	operation            Operation
+	existingOperations   models.GameOperationSlice
+	expectedBoard        [][]int
+	expectedConfirmation OperationConfirmation
+	err                  error
+}
 
 func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
@@ -129,6 +141,9 @@ func assertOperation(o1, o2 Operation) error {
 
 func assertOperationResults(o1, o2 []OperationResult) error {
 	var err error
+	if len(o1) != len(o2) {
+		return fmt.Errorf("expected operation result to have length of %d but was %d", len(o1), len(o2))
+	}
 	for i := range o1 {
 		err = assertOperationResult(o1[i], o2[i])
 		if err != nil {
@@ -156,6 +171,9 @@ func assertOperationResult(o1, o2 OperationResult) error {
 
 func assertDeltaOperations(o1, o2 []Operation) error {
 	var err error
+	if len(o1) != len(o2) {
+		return fmt.Errorf("expected delta operations to have length of %d but was %d", len(o1), len(o2))
+	}
 	for i := range o1 {
 		err = assertOperation(o1[i], o2[i])
 		if err != nil {
@@ -192,4 +210,65 @@ func assertStatus(s1, s2 Status) error {
 		}
 	}
 	return nil
+}
+
+func assertGameTests(ctx context.Context, t testing.TB, user security.JWTUser, api API, tests []gameTest) {
+	for i, test := range tests {
+		err := api.storeGameBoard(ctx, user, test.game, test.initialBoard)
+		if err != nil {
+			t.Fatalf("test %d, failed: error creating board %v\n", i, err)
+		}
+		if len(test.existingOperations) > 0 {
+			for _, o := range test.existingOperations {
+				o.GameID = test.game.ID
+				err = o.Insert(ctx, api.db, boil.Infer())
+				if err != nil {
+					t.Fatalf("error inserting game operation: %v", err)
+				}
+			}
+		}
+		if test.finished {
+			_, err = models.Games(qm.Where("id = ?", test.game.ID)).UpdateAll(ctx, api.db, models.M{"finished_at": time.Now().UTC()})
+			if err != nil {
+				t.Fatalf("test %d, failed: error setting gam as finished board %v\n", i, err)
+			}
+		}
+		test.expectedConfirmation.Operation.GameID = test.game.ID
+		if test.operation.GameID >= 0 {
+			test.operation.GameID = test.game.ID
+		}
+		confirmation, err := api.ApplyOperation(ctx, user, test.operation)
+		if err != test.err {
+			t.Fatalf("test %d failed: expected err to be %v, but was %v\n", i, test.err, err)
+		}
+		if err == nil {
+			for i := range test.expectedConfirmation.DeltaOperations {
+				test.expectedConfirmation.DeltaOperations[i].GameID = test.game.ID
+			}
+			err = assertOperationConfirmation(test.expectedConfirmation, confirmation)
+			if err != nil {
+				t.Fatalf("test %d failed: %s\n", i, err.Error())
+			}
+			if test.expectedConfirmation.Status.Won || test.expectedConfirmation.Status.Lost {
+				game, err := models.FindGame(ctx, api.db, test.game.ID)
+				if err != nil {
+					t.Fatalf("test %d, failed: error retrieving game %v\n", i, err)
+				}
+				if !game.FinishedAt.Valid {
+					t.Fatalf("test %d, failed: error game was not marked as finished\n", i)
+				}
+			}
+			board, err := retrieveFullBoard(ctx, api.db, test.game.ID, int(test.game.Rows), int(test.game.Cols))
+			if err != nil {
+				t.Fatalf("test %d failed: error retrieving game board %v\n", i, err)
+			}
+			for row := range test.expectedBoard {
+				for col := range test.expectedBoard[row] {
+					if test.expectedBoard[row][col] != board[row][col] {
+						t.Fatalf("test %d failed: expected row %d, col %d to be %d but was %d", i, row, col, test.expectedBoard[row][col], board[row][col])
+					}
+				}
+			}
+		}
+	}
 }
