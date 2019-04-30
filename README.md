@@ -192,4 +192,5 @@ If I have to choose between faster game creations or faster game update, I choos
 - [ ] Implement a client for the backend API.
 - [ ] Create the game board in the frontend using the client backend API.
 - [ ] Add request validation unit test.
+- [ ] Release v1.0.0
 - [ ] auto reveal 0 mines
