@@ -68,8 +68,8 @@ const actions = {
     return authService
       .getCurrentUser()
       .then(response => response.json())
-      .then(userLogged => {
-        commit("setUser", userLogged);
+      .then(body => {
+        commit("setUser", body.user);
       })
       .catch(() => {
         // if it fails, do nothing
