@@ -39,6 +39,7 @@ export default {
         mines: 0,
         board: [],
         latestOperationId: 0,
+        startedAt: null,
         finishedAt: null,
         won: false
       }

@@ -56,7 +56,6 @@ func compare(expected, given interface{}) error {
 }
 
 func TestAuthenticate(t *testing.T) {
-	// Setup
 	tests := []testHelpers.EchoUnitTest{
 		{
 			Path:        "/api",

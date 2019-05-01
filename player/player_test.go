@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/javiercbk/minesweeper/http/response"
+	"github.com/javiercbk/minesweeper/http/security"
 	testHelpers "github.com/javiercbk/minesweeper/testing"
 	"github.com/labstack/echo"
 )
@@ -24,13 +25,12 @@ const testPlayerID = 64
 
 var testErrExists = response.HTTPError{
 	Code:    http.StatusConflict,
-	Message: fmt.Sprintf("player playerExists already exists", testErrPlayerExists),
+	Message: fmt.Sprintf("player %s already exists", testErrPlayerExists),
 }
 
 type mockAPI struct{}
 
 func (m mockAPI) CreatePlayer(ctx context.Context, pPlayer *ProspectPlayer) error {
-	hashPassword, err := HashPassword(pPlayer.Password)
 	if pPlayer.Name == testErrHash {
 		return errors.New("error hashing password")
 	}
@@ -53,11 +53,19 @@ func compare(expected, given interface{}) error {
 	if !ok {
 		return fmt.Errorf("given is not a ProspectPlayer")
 	}
+	if expectedTR.ID != givenTR.ID {
+		return fmt.Errorf("expected ID to be %d but was %d", expectedTR.ID, givenTR.ID)
+	}
+	if expectedTR.Name != givenTR.Name {
+		return fmt.Errorf("expected Name to be %s but was %s", expectedTR.Name, givenTR.Name)
+	}
+	if expectedTR.Password != givenTR.Password {
+		return fmt.Errorf("expected Password to be %s but was %s", expectedTR.Password, givenTR.Password)
+	}
 	return nil
 }
 
-func TestCreatePlayer(t *testing.T) {
-	// Setup
+func TestCreatePlayerEndpoint(t *testing.T) {
 	tests := []testHelpers.EchoUnitTest{
 		{
 			Path:        "/api",
@@ -165,7 +173,7 @@ func TestCreatePlayer(t *testing.T) {
 		return mockAPI{}
 	}
 	handler := NewHandler(testHelpers.NullLogger(), nil)
-	handler.Routes(apiRouter)
+	handler.Routes(apiRouter, security.JWTMiddlewareFactory(jwtSecret))
 	for i, test := range tests {
 		requestText := ""
 		if test.Body != "" {
@@ -175,7 +183,7 @@ func TestCreatePlayer(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		handler.AuthenticateFactory(jwtSecret)(c)
+		handler.Create(c)
 		given := response.ServiceResponse{}
 		err := json.Unmarshal(rec.Body.Bytes(), &given)
 		if err != nil {

@@ -28,6 +28,7 @@ const gameMines = 99
 
 type gameTest struct {
 	game                 *models.Game
+	failureGameID        int64
 	finished             bool
 	initialBoard         [][]int
 	operation            Operation
@@ -41,7 +42,7 @@ func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
 }
 
-func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUser, security.JWTUser) {
+func setUp(ctx context.Context, t testing.TB, name string) (api, security.JWTUser, security.JWTUser) {
 	logger := testHelpers.NullLogger()
 	db, err := testHelpers.DB()
 	if err != nil {
@@ -63,7 +64,7 @@ func setUp(ctx context.Context, t testing.TB, name string) (API, security.JWTUse
 	if err != nil {
 		t.Fatalf("error creating player %v", err)
 	}
-	return NewAPI(logger, db), security.JWTUser{
+	return NewAPI(logger, db).(api), security.JWTUser{
 			ID:   testPlayer.ID,
 			Name: name,
 		}, security.JWTUser{
@@ -212,7 +213,7 @@ func assertStatus(s1, s2 Status) error {
 	return nil
 }
 
-func assertGameTests(ctx context.Context, t testing.TB, user security.JWTUser, api API, tests []gameTest) {
+func assertGameTests(ctx context.Context, t testing.TB, user security.JWTUser, api api, tests []gameTest) {
 	for i, test := range tests {
 		err := api.storeGameBoard(ctx, user, test.game, test.initialBoard)
 		if err != nil {

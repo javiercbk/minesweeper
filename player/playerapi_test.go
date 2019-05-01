@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	testHelpers.InitializeDB(m)
 }
 
-func setUp(ctx context.Context, t *testing.T, existingUserName string) API {
+func setUp(ctx context.Context, t *testing.T, existingUserName string) api {
 	logger := testHelpers.NullLogger()
 	db, err := testHelpers.DB()
 	if err != nil {
@@ -36,7 +36,7 @@ func setUp(ctx context.Context, t *testing.T, existingUserName string) API {
 	if err != nil {
 		t.Fatalf("error inserting test user: %v\n", err)
 	}
-	return NewAPI(logger, db)
+	return NewAPI(logger, db).(api)
 }
 
 func TestCreatePlayer(t *testing.T) {

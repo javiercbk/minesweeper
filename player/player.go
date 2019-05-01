@@ -19,6 +19,14 @@ type Handler struct {
 	db     *sql.DB
 }
 
+type pResponse struct {
+	Player ProspectPlayer `json:"player"`
+}
+
+type uResponse struct {
+	User security.JWTUser `json:"user"`
+}
+
 // NewHandler creates a handler for the game route
 func NewHandler(logger *log.Logger, db *sql.DB) Handler {
 	return Handler{
@@ -53,7 +61,7 @@ func (h Handler) Create(c echo.Context) error {
 	}
 	// remove the password before re sending it to the client
 	pPlayer.Password = ""
-	return response.NewSuccessResponse(c, pPlayer)
+	return response.NewSuccessResponse(c, pResponse{pPlayer})
 }
 
 // RetrieveCurrent is the http handler that retrieves the authenticated user
@@ -63,5 +71,5 @@ func (h Handler) RetrieveCurrent(c echo.Context) error {
 		h.logger.Printf("error finding jwt token in context: %v\n", err)
 		return response.NewErrorResponse(c, http.StatusForbidden, "authentication token was not found")
 	}
-	return response.NewSuccessResponse(c, user)
+	return response.NewSuccessResponse(c, uResponse{user})
 }
