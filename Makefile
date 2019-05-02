@@ -24,10 +24,10 @@ lint:
 	~/go/bin/golangci-lint run
 
 server:
-	go build -tags=jsoniter -ldflags "-X http.response.minesweeperVersion=$(BIN_VERSION)" cmd/server/server.go
+	go build -tags=jsoniter -ldflags "-X github.com/javiercbk/minesweeper/http/response.minesweeperVersion=$(BIN_VERSION)" cmd/server/server.go
 
 build-server: lint
-	go build -tags=jsoniter -ldflags "-X http.response.minesweeperVersion=$(BIN_VERSION)" cmd/server/server.go
+	go build -tags=jsoniter -ldflags "-X github.com/javiercbk/minesweeper/http/response.minesweeperVersion=$(BIN_VERSION)" cmd/server/server.go
 
 # outputs the current version
 version:
