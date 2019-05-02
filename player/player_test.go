@@ -183,7 +183,7 @@ func TestCreatePlayerEndpoint(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		handler.Create(c)
+		_ = handler.Create(c)
 		given := response.ServiceResponse{}
 		err := json.Unmarshal(rec.Body.Bytes(), &given)
 		if err != nil {

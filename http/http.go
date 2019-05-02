@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/javiercbk/minesweeper/auth"
 	"github.com/javiercbk/minesweeper/game"
+	"github.com/javiercbk/minesweeper/http/response"
 	"github.com/javiercbk/minesweeper/http/security"
 	"github.com/javiercbk/minesweeper/player"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	gommonLog "github.com/labstack/gommon/log"
+
 	// imports the postgres sql driver
 	_ "github.com/lib/pq"
 )
@@ -39,9 +42,25 @@ func (cv *customValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
 }
 
+func httpErrorHandlerFactory(logger *log.Logger) echo.HTTPErrorHandler {
+	return func(err error, c echo.Context) {
+		code := http.StatusInternalServerError
+		if he, ok := err.(*echo.HTTPError); ok {
+			code = he.Code
+			if code == 404 {
+				response.NewErrorResponse(c, code, fmt.Sprintf("resource %s was not found", c.Request().URL))
+				return
+			}
+		}
+		logger.Printf("Error in server %v", err)
+		response.NewErrorResponse(c, code, http.StatusText(code))
+	}
+}
+
 // Serve http connections
 func Serve(cnf Config, logger *log.Logger, db *sql.DB) error {
 	router := echo.New()
+	router.HTTPErrorHandler = httpErrorHandlerFactory(logger)
 	router.Validator = &customValidator{validator: validator.New()}
 	router.Logger.SetLevel(gommonLog.INFO)
 	router.Use(middleware.Recover())
@@ -51,7 +70,8 @@ func Serve(cnf Config, logger *log.Logger, db *sql.DB) error {
 	initRoutes(router, cnf.JWTSecret, logger, db)
 	srv := newServer(router, cnf.Address)
 	go func() {
-		// service connections
+		// serve connections
+		logger.Printf("Listening http connections on %s", cnf.Address)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			router.Logger.Fatalf("listen: %s\n", err)
 		}
@@ -86,14 +106,14 @@ func initRoutes(router *echo.Echo, jwtSecret string, logger *log.Logger, db *sql
 		authHandler := auth.NewHandler(logger, db)
 		authHandler.Routes(authRouter, jwtSecret)
 	}
-	gamesRouter := apiRouter.Group("/games")
-	gamesRouter.Use(jwtMiddleware)
 	{
+		gamesRouter := apiRouter.Group("/games")
+		gamesRouter.Use(jwtMiddleware)
 		gameHandler := game.NewHandler(logger, db)
 		gameHandler.Routes(gamesRouter)
 	}
 	{
-		playerRouter := apiRouter.Group("/player")
+		playerRouter := apiRouter.Group("/players")
 		playerHandler := player.NewHandler(logger, db)
 		playerHandler.Routes(playerRouter, jwtMiddleware)
 	}

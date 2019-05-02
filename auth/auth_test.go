@@ -175,7 +175,7 @@ func TestAuthenticate(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		handler.AuthenticateFactory(jwtSecret)(c)
+		_ = handler.AuthenticateFactory(jwtSecret)(c)
 		given := response.ServiceResponse{}
 		err := json.Unmarshal(rec.Body.Bytes(), &given)
 		if err != nil {

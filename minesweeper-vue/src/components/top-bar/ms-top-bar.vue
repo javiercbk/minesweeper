@@ -29,4 +29,4 @@
   </nav>
 </template>
 
-<script src="./top-bar.js"></script>
+<script src="./ms-top-bar.js"></script>

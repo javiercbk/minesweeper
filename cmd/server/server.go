@@ -19,7 +19,6 @@ const defaultDBName = "minesweep"
 const defaultDBUser = "minesweep"
 
 func main() {
-	db := sql.DB{}
 	var logFilePath, address, jwtSecret, dbName, dbHost, dbUser, dbPass string
 	flag.StringVar(&logFilePath, "l", defaultLogFilePath, "the log file location")
 	flag.StringVar(&address, "a", defaultAddress, "the http server address")
@@ -36,7 +35,7 @@ func main() {
 	}
 	defer logFile.Close()
 	logger := log.New(logFile, "applog: ", log.Lshortfile|log.LstdFlags)
-	err = connectPostgres(dbName, dbHost, dbUser, dbPass, &db)
+	db, err := connectPostgres(dbName, dbHost, dbUser, dbPass)
 	if err != nil {
 		logger.Printf("error connecting to postgres: %s", err)
 		os.Exit(1)
@@ -45,22 +44,18 @@ func main() {
 		Address:   address,
 		JWTSecret: jwtSecret,
 	}
-	err = http.Serve(cnf, logger, &db)
+	err = http.Serve(cnf, logger, db)
 	if err != nil {
 		logger.Fatalf("could not start server %s\n", err)
 	}
 }
 
-func connectPostgres(dbName, dbHost, dbUser, dbPass string, db *sql.DB) error {
-	var err error
-	postgresOpts := fmt.Sprintf("dbname=%s host=%s user=%s password=%s", dbName, dbHost, dbUser, dbPass)
-	db, err = sql.Open("postgres", postgresOpts)
+func connectPostgres(dbName, dbHost, dbUser, dbPass string) (*sql.DB, error) {
+	postgresOpts := fmt.Sprintf("dbname=%s host=%s user=%s password=%s sslmode=disable", dbName, dbHost, dbUser, dbPass)
+	db, err := sql.Open("postgres", postgresOpts)
 	if err != nil {
-		return err
+		return db, err
 	}
 	err = db.Ping()
-	if err != nil {
-		return err
-	}
-	return nil
+	return db, err
 }

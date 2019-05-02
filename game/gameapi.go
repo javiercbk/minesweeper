@@ -370,9 +370,6 @@ func (api api) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 					}
 					return err
 				}
-				if err != nil {
-					return err
-				}
 				confirmation.Operation.Applied = true
 				confirmation.Operation.Result = []OperationResult{buildOperationResult(oper, newMineProximity)}
 				break
@@ -466,6 +463,7 @@ func (api api) commitOperation(ctx context.Context, user security.JWTUser, confi
 		}
 	} else if mineProximity == 0 {
 		// TODO: if the game was not lost nor one but the mine proximity was 0, reveal the sibling places with zero mines
+		api.logger.Print("Missing implementation")
 	}
 	return tx.Commit()
 }
