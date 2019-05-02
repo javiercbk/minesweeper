@@ -9,12 +9,12 @@ export default {
   },
   data() {
     return {
-      username: "",
+      name: "",
       password: ""
     };
   },
   validations: {
-    username: {
+    name: {
       required,
       minLength: minLength(1)
     },
@@ -24,11 +24,11 @@ export default {
     }
   },
   computed: {
-    usernameValid() {
-      return !this.$v.username.$invalid;
+    nameValid() {
+      return !this.$v.name.$invalid;
     },
-    usernameInvalidDirty() {
-      return this.$v.username.$invalid && this.$v.username.$dirty;
+    nameInvalidDirty() {
+      return this.$v.name.$invalid && this.$v.name.$dirty;
     },
     passwordValid() {
       return !this.$v.password.$invalid;
@@ -41,7 +41,7 @@ export default {
     submit() {
       if (!this.$v.$invalid && !this.disabled) {
         this.$emit("user-submit", {
-          username: this.username,
+          name: this.name,
           password: this.password
         });
       }

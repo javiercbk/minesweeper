@@ -6,10 +6,9 @@
         type="text"
         class="form-control"
         :class="{'is-valid': usernameValid, 'is-invalid': usernameInvalidDirty}"
-        id="login-username"
-        v-model="$v.username.$model"
+        id="login-name"
+        v-model="$v.name.$model"
         :disabled="disabled"
-        placeholder="Enter username"
       >
       <div
         v-transparent="!usernameInvalidDirty"
@@ -25,7 +24,6 @@
         id="login-password"
         v-model="$v.password.$model"
         :disabled="disabled"
-        placeholder="Password"
       >
       <div
         v-transparent="!passwordInvalidDirty"
