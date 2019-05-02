@@ -13,7 +13,6 @@ import (
 
 	"github.com/javiercbk/minesweeper/auth"
 	"github.com/javiercbk/minesweeper/game"
-	"github.com/javiercbk/minesweeper/game/operations"
 	"github.com/javiercbk/minesweeper/http/security"
 	"github.com/javiercbk/minesweeper/player"
 
@@ -92,11 +91,6 @@ func initRoutes(router *echo.Echo, jwtSecret string, logger *log.Logger, db *sql
 	{
 		gameHandler := game.NewHandler(logger, db)
 		gameHandler.Routes(gamesRouter)
-	}
-	{
-		operationsRouter := gamesRouter.Group("/operations")
-		operationsHandler := operations.NewHandler(logger, db)
-		operationsHandler.Routes(operationsRouter)
 	}
 	{
 		playerRouter := apiRouter.Group("/player")

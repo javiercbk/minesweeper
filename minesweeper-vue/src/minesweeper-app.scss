@@ -1,0 +1,21 @@
+@import "~bootstrap/scss/bootstrap.scss";
+
+#app {
+  height: 100vh;
+  width: 100vw;
+}
+
+.notification-manager {
+  top: 10px;
+  left: 25%;
+  width: 50%;
+  z-index: 15000;
+  position: fixed;
+}
+
+@include media-breakpoint-down(md) {
+  .notification-manager {
+    left: 15%;
+    width: 75%;
+  }
+}

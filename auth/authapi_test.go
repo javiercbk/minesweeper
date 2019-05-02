@@ -12,7 +12,6 @@ import (
 
 // abcHashed is the bcrypt hash of the string "abc" (without quotes)
 const abcHashed = "$2y$12$Fq0ne4S2xnhZTYE7p/veuOX3X6DlF1qZYeeHhK/PY39TP7//klYkW"
-
 const jwtSecret = "wow"
 
 func TestMain(m *testing.M) {

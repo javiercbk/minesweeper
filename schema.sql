@@ -43,6 +43,7 @@ CREATE TABLE game_operations(
     CONSTRAINT fk_games_creator FOREIGN KEY (player_id) REFERENCES players (id)
 );
 
+CREATE INDEX idx_game_operation_game ON game_operations (game_id);
 CREATE UNIQUE INDEX idx_game_operation ON game_operations (game_id, operation_id);
 
 CREATE TABLE game_board_points(

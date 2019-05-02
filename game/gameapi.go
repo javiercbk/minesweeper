@@ -18,6 +18,7 @@ import (
 	"github.com/javiercbk/minesweeper/http/security"
 	"github.com/javiercbk/minesweeper/models"
 	"github.com/lib/pq"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -77,7 +78,7 @@ type ProspectGame struct {
 type OperationResult struct {
 	Row           int `json:"row"`
 	Col           int `json:"col"`
-	MineProximity int `json:"mineProximity,omitempty"`
+	MineProximity int `json:"mineProximity"`
 	PointState    int `json:"pointState"`
 }
 
@@ -94,8 +95,8 @@ type Operation struct {
 
 // Status is the game status
 type Status struct {
-	Rows  int     `json:"-"`
-	Cols  int     `json:"-"`
+	Rows  int     `json:"rows"`
+	Cols  int     `json:"cols"`
 	Won   bool    `json:"won"`
 	Lost  bool    `json:"lost"`
 	Board [][]int `json:"board,omitempty"`
@@ -109,15 +110,43 @@ type OperationConfirmation struct {
 	Error           error       `json:"error"`
 }
 
+// Creator is the basic data of a game creator
+type Creator struct {
+	ID   int64  `boil:"players.id" json:"id"`
+	Name string `boil:"players.name" json:"name"`
+}
+
+// StatefulGame is a game with the revealed points of the board
+type StatefulGame struct {
+	ID              int64        `boil:"id" json:"id"`
+	Private         bool         `boil:"private" json:"private"`
+	Cols            int16        `boil:"cols" json:"cols"`
+	Rows            int16        `boil:"rows" json:"rows"`
+	Mines           int16        `boil:"mines" json:"mines"`
+	StartedAt       null.Time    `boil:"started_at" json:"startedAt,omitempty"`
+	FinishedAt      null.Time    `boil:"finished_at" json:"finishedAt,omitempty"`
+	Won             null.Bool    `boil:"won" json:"won,omitempty"`
+	Creator         Creator      `boil:",bind"`
+	LastOperationID int          `boil:"last_operation_id" json:"lastOperationId"`
+	Board           [][]null.Int `json:"board"`
+}
+
 // API is the game api
-type API struct {
+type API interface {
+	CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame) error
+	ApplyOperation(ctx context.Context, user security.JWTUser, oper Operation) (OperationConfirmation, error)
+	FindGames(ctx context.Context, user security.JWTUser) (models.GameSlice, error)
+	RetrieveGame(ctx context.Context, user security.JWTUser, id int64) (StatefulGame, error)
+}
+
+type api struct {
 	logger *log.Logger
 	db     *sql.DB
 }
 
 // NewAPI creates a new game API
 func NewAPI(logger *log.Logger, db *sql.DB) API {
-	return API{
+	return api{
 		logger: logger,
 		db:     db,
 	}
@@ -135,8 +164,50 @@ type board struct {
 	board [][]int
 }
 
+func (api api) FindGames(ctx context.Context, user security.JWTUser) (models.GameSlice, error) {
+	return models.Games(
+		qm.Where("(private = false OR creator_id = ?) AND finished_at IS NULL", user.ID),
+	).All(ctx, api.db)
+}
+
+func (api api) RetrieveGame(ctx context.Context, user security.JWTUser, id int64) (StatefulGame, error) {
+	statefulGame := StatefulGame{}
+	err := queries.Raw(`
+		SELECT g.id as "id", g.private as "private",
+		g.rows as "rows", g.cols as "cols",
+		g.mines as "mines", g.started_at as "started_at",
+		g.finished_at as "finished_at", g.won as "won",
+		p.id as "players.id", p.name as "players.name",
+		go.operation_id as "last_operation_id"
+		FROM games g INNER JOIN players p on g.creator_id = p.id
+		INNER JOIN game_operations go ON go.game_id = g.id
+		WHERE g.id = $1 AND (g.private = false OR g.creator_id = $2)
+		AND go.operation_id = (
+			SELECT MAX(o.operation_id)
+			FROM game_operations o
+			WHERE game_id = g.id
+		)`, id, user.ID,
+	).Bind(ctx, api.db, &statefulGame)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return statefulGame, response.HTTPError{
+				Code:    http.StatusNotFound,
+				Message: fmt.Sprintf("game %d does not exist", id),
+			}
+		}
+		api.logger.Printf("error retrieving game: %v", err)
+		return statefulGame, err
+	}
+	gameBoardPoints, err := retrieveNullableBoard(ctx, api.db, id, int(statefulGame.Rows), int(statefulGame.Cols), pRevealed)
+	if err != nil {
+		return statefulGame, err
+	}
+	statefulGame.Board = gameBoardPoints
+	return statefulGame, err
+}
+
 // CreateGame creates a random board game and stores a new game in the database
-func (api API) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame) error {
+func (api api) CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame) error {
 	board, err := NewBoard(pGame.Rows, pGame.Cols, pGame.Mines)
 	if err != nil {
 		return response.HTTPError{
@@ -160,7 +231,7 @@ func (api API) CreateGame(ctx context.Context, user security.JWTUser, pGame *Pro
 }
 
 // ApplyOperation applies a given operation to a game and returns an operation confirmation
-func (api API) ApplyOperation(ctx context.Context, user security.JWTUser, oper Operation) (OperationConfirmation, error) {
+func (api api) ApplyOperation(ctx context.Context, user security.JWTUser, oper Operation) (OperationConfirmation, error) {
 	var err error
 	confirmation := OperationConfirmation{
 		Operation: Operation{
@@ -176,7 +247,10 @@ func (api API) ApplyOperation(ctx context.Context, user security.JWTUser, oper O
 	case confirmation = <-confirmationChan:
 		err = confirmation.Error
 	case <-ctx.Done():
-		err = ctx.Err()
+		err = response.HTTPError{
+			Code:    http.StatusRequestTimeout,
+			Message: "operation timeout",
+		}
 	}
 	if err != nil {
 		return confirmation, err
@@ -184,7 +258,7 @@ func (api API) ApplyOperation(ctx context.Context, user security.JWTUser, oper O
 	return confirmation, nil
 }
 
-func (api API) applyOperation(ctx context.Context, user security.JWTUser, oper Operation, confirmationChan chan OperationConfirmation) {
+func (api api) applyOperation(ctx context.Context, user security.JWTUser, oper Operation, confirmationChan chan OperationConfirmation) {
 	defer close(confirmationChan)
 	gameDoesNotExistError := response.HTTPError{
 		Code:    http.StatusNotFound,
@@ -218,7 +292,7 @@ func (api API) applyOperation(ctx context.Context, user security.JWTUser, oper O
 	confirmationChan <- confirmation
 }
 
-func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, oper Operation, confirmation *OperationConfirmation) error {
+func (api api) attempApplyOperation(ctx context.Context, user security.JWTUser, oper Operation, confirmation *OperationConfirmation) error {
 	var gameOperations models.GameOperationSlice
 	var mineProximity algebra.MineProximity
 	operationID := oper.ID
@@ -312,7 +386,7 @@ func (api API) attempApplyOperation(ctx context.Context, user security.JWTUser, 
 	return ctx.Err()
 }
 
-func (api API) commitOperation(ctx context.Context, user security.JWTUser, confirmation *OperationConfirmation, mineProximity algebra.MineProximity) error {
+func (api api) commitOperation(ctx context.Context, user security.JWTUser, confirmation *OperationConfirmation, mineProximity algebra.MineProximity) error {
 	tx, err := api.db.BeginTx(ctx, nil)
 	if err != nil {
 		api.logger.Printf("error beggining transaction for updating game row: %v\n", err)
@@ -396,13 +470,13 @@ func (api API) commitOperation(ctx context.Context, user security.JWTUser, confi
 	return tx.Commit()
 }
 
-func (api API) updateGameState(ctx context.Context, tx *sql.Tx, gameID int64, won bool) (int64, error) {
+func (api api) updateGameState(ctx context.Context, tx *sql.Tx, gameID int64, won bool) (int64, error) {
 	return models.Games(qm.Where("id = ?", gameID)).
 		UpdateAll(ctx, tx, models.M{"won": won, "finished_at": time.Now().UTC().Format(time.RFC3339)})
 }
 
 // storeGameBoard stores a Game board in the game_board_points table
-func (api API) storeGameBoard(ctx context.Context, user security.JWTUser, game *models.Game, board [][]int) error {
+func (api api) storeGameBoard(ctx context.Context, user security.JWTUser, game *models.Game, board [][]int) error {
 	tx, err := api.db.BeginTx(ctx, nil)
 	if err != nil {
 		api.logger.Printf("error beggining transaction: %v\n", err)
@@ -457,7 +531,7 @@ func (api API) storeGameBoard(ctx context.Context, user security.JWTUser, game *
 	return nil
 }
 
-func (api API) retrieveRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
+func (api api) retrieveRowCol(ctx context.Context, user security.JWTUser, gameID int64, row, col int) (int, error) {
 	gameBoardPoint, err := models.GameBoardPoints(
 		qm.Select("mine_proximity"),
 		qm.InnerJoin("games g on g.id = game_board_points.game_id"),
@@ -473,7 +547,7 @@ func (api API) retrieveRowCol(ctx context.Context, user security.JWTUser, gameID
 	return int(gameBoardPoint.MineProximity), nil
 }
 
-func (api API) updateRowCol(ctx context.Context, gameID int64, row, col, mineProximity int) error {
+func (api api) updateRowCol(ctx context.Context, gameID int64, row, col, mineProximity int) error {
 	aff, err := models.GameBoardPoints(
 		qm.Where("game_id = ? AND row = ? AND col = ?", gameID, row, col),
 	).UpdateAll(ctx, api.db, models.M{
@@ -605,8 +679,28 @@ func composeServerClient(gameOperations models.GameOperationSlice, gameID int64,
 }
 
 func retrieveFullBoard(ctx context.Context, executor boil.ContextExecutor, gameID int64, rows, cols int) ([][]int, error) {
+	return retrieveBoard(ctx, executor, gameID, rows, cols, pAll)
+}
+
+func retrieveNullableBoard(ctx context.Context, executor boil.ContextExecutor, gameID int64, rows, cols int, mask proximityMask) ([][]null.Int, error) {
+	var board [][]null.Int
+	points, err := retrieveMines(ctx, executor, gameID, mask)
+	if err != nil {
+		return board, err
+	}
+	board = make([][]null.Int, rows)
+	for i := range board {
+		board[i] = make([]null.Int, cols)
+	}
+	for _, p := range points {
+		board[p.Row][p.Col] = null.NewInt(int(p.MineProximity), true)
+	}
+	return board, nil
+}
+
+func retrieveBoard(ctx context.Context, executor boil.ContextExecutor, gameID int64, rows, cols int, mask proximityMask) ([][]int, error) {
 	var board [][]int
-	points, err := retrieveMines(ctx, executor, gameID, pAll)
+	points, err := retrieveMines(ctx, executor, gameID, mask)
 	if err != nil {
 		return board, err
 	}

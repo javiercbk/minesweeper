@@ -1,0 +1,48 @@
+.board-tile {
+  border: 1 px solid gray;
+  background-color: #b0b0b0;
+}
+
+.revealed {
+  background: gray;
+  -webkit-box-shadow: inset 0px 0px 5px #b0b0b0;
+  -moz-box-shadow: inset 0px 0px 5px #b0b0b0;
+  box-shadow: inset 0px 0px 5px #b0b0b0;
+  outline: none;
+}
+
+.mine-0 {
+  color: rgba(0, 0, 0, 0);
+}
+
+.mine-1 {
+  color: #1e1959;
+}
+
+.mine-2 {
+  color: #0f454f;
+}
+
+.mine-3 {
+  color: #10631a;
+}
+
+.mine-4 {
+  color: #aaa700;
+}
+
+.mine-5 {
+  color: #aa7900;
+}
+
+.mine-6 {
+  color: #aa5600;
+}
+
+.mine-7 {
+  color: #aa2b00;
+}
+
+.mine-8 {
+  color: #930b00;
+}

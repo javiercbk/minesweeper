@@ -1,0 +1,49 @@
+@import "~bootstrap/dist/css/bootstrap.css";
+// define custom colors in the colors file
+// @import "./colors.scss";
+
+body {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.davinci-clickable {
+  cursor: pointer;
+}
+
+.davinci-transparent {
+  opacity: 0;
+}
+
+.multiselect.multiselect-button-right .multiselect__tags,
+.flat-border-right {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.flat-border-left {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.mutiselect-is-valid .multiselect__tags {
+  border-color: $validation-border-valid;
+}
+
+.mutiselect-is-invalid .multiselect__tags {
+  border-color: $validation-border-invalid;
+}
+
+.mutiselect-is-invalid ~ .invalid-feedback {
+  display: block;
+}

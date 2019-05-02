@@ -26,13 +26,13 @@ Using a unique name and a password, the user can start creating games or join pu
 
 A game defines whether a game is public or not, when it was started, which player is the creator and whether it has finished or not and what was the end result. Also it contains the amount of mines and the board size.
 
-* See "Database model" section for more details
+- See "Database model" section for more details
 
 ###### Game board points
 
 A game board 2D points (game map) contains all the points in space for a game and a `mine_proximity` value associated.
 
-* See "Database model" inside the Architecture section for more details
+- See "Database model" inside the Architecture section for more details
 
 ## Minesweep algebra
 
@@ -42,10 +42,10 @@ The `mine_proximity` value is an integer that describes the state of a point in 
 - A negative number means that the state of that point in space is unrevealed.
 - Values from -9 to 8 mean that the point has no mine and the absolute value signals how many mines are next (in any direction) to the point in space.
 - Values -10 and 9 means that there is an unrevealed or revealed mine in that point of space.
-- Values from -11 to -19 means that there is a marked *possible* mine point in space. Marking a point is the same as subtracting 10, thus unmarking it is the same as adding 10.
+- Values from -11 to -19 means that there is a marked _possible_ mine point in space. Marking a point is the same as subtracting 10, thus unmarking it is the same as adding 10.
 - Values from -21 to -29 means that there is a marked mine point in space. Marking a point is the same as subtracting -20, thus unmarking it is the same as adding 20.
 
-With this in mind you can define the *minesweep algebra*:
+With this in mind you can define the _minesweep algebra_:
 
 Let:
 
@@ -78,9 +78,9 @@ Let:
 - compose(reveal(x1,y1), mark(x2,y2)) = [reveal(x1,y1), mark(x2,y2)]
 - compose(mark(x1,y1), reveal(x2,y2)) = [mark(x1,y1), reveal(x2,y2)]
 
-By defining the *minesweep algebra*, you can define a **minesweep game** as a game state that has been applied a finite amount of operations that can be composed until you calculate the current game state.
+By defining the _minesweep algebra_, you can define a **minesweep game** as a game state that has been applied a finite amount of operations that can be composed until you calculate the current game state.
 
-The *minesweep algebra* has several advantages:
+The _minesweep algebra_ has several advantages:
 
 - It allows the application to rely on operation composition rather than locks to manage the game state.
 - It prevents data races by making explicit conflicts resolutions.
@@ -88,22 +88,21 @@ The *minesweep algebra* has several advantages:
 
 It only has one disadvantage
 
-- Both client and server need to implement the full *minesweep algebra* to work properly and any change made to the algebra will force changes in both server and client.
-
+- Both client and server need to implement the full _minesweep algebra_ to work properly and any change made to the algebra will force changes in both server and client.
 
 ## Architecture
 
-The application is basically a REST API that validates and executes operations of the *minesweep algebra* on a game state, such validations are:
+The application is basically a REST API that validates and executes operations of the _minesweep algebra_ on a game state, such validations are:
 
 - Validate that the player owns the game or is playing on a public game.
-- Validate if the *minesweep operation* is valid within the board (do not allow out of bounds operations)
-- Validate if the *minesweep operation* is valid within the game state (do not allow operations on games won or lost).
+- Validate if the _minesweep operation_ is valid within the board (do not allow out of bounds operations)
+- Validate if the _minesweep operation_ is valid within the game state (do not allow operations on games won or lost).
 
 If the operation is valid it will always result in a board change **unless** the reveal operation is performed on an already revealed field. This is important when taking into account multiple users.
 
 Upon connecting to a game, the player receives the game state and starts receiving operations to update the local game state.
 
-The synchronization strategy between players is optimistic, applying [OT](https://en.wikipedia.org/wiki/Operational_transformation) to keep the local and server game state synchronized. The operations to be transformed are the defined in the *minesweep algebra*.
+The synchronization strategy between players is optimistic, applying [OT](https://en.wikipedia.org/wiki/Operational_transformation) to keep the local and server game state synchronized. The operations to be transformed are the defined in the _minesweep algebra_.
 
 For each operation sent and received there is an operation id attached. Such id increases with each operation and it allows the client and the server to know whether they are synchronized, if the server notices that there is a client sending an operation with an already taken operation id, it can send back all the operations that the client has missed plus it can apply the operation without forcing the client to re-send the operation.
 
@@ -125,7 +124,7 @@ I have certain hypothesis:
 
 - Denormalized approach would be faster to read and first write (creation would be faster) but slower to update.
 - Denormalized approach would be slower to check the `mine_proximity` of a single point.
-- Denormalized approach would make the algorithm to auto reveal *zero mines*.
+- Denormalized approach would make the algorithm to auto reveal _zero mines_.
 - Normalized approach would be faster to read a single 2D point and faster to apply operations on a row level.
 
 Are my hypothesis correct? I don't know, but I can quickly benchmark this.
@@ -138,11 +137,11 @@ Chech the full benchmarks in the branch [jl/game-benchmark](https://github.com/j
 
 Storing the game board with array
 
-> 10000	   3775875 ns/op	  546135 B/op	     281 allocs/op
+> 10000 3775875 ns/op 546135 B/op 281 allocs/op
 
 Storing the game board in the normalized structure
 
-> 10	 190661383 ns/op	 3972940 B/op	   50126 allocs/op
+> 10 190661383 ns/op 3972940 B/op 50126 allocs/op
 
 Storing the game board denormalized significantly improves storing the game board for the first time (game creation).
 
@@ -150,11 +149,11 @@ Storing the game board denormalized significantly improves storing the game boar
 
 Retrieving a single game board row column with the denormalized approach
 
-> 1000	   2034873 ns/op	 1227521 B/op	   10101 allocs/op
+> 1000 2034873 ns/op 1227521 B/op 10101 allocs/op
 
 Retrieving a single game row column with the normalized approach
 
->  10000	    177058 ns/op	    3324 B/op	      68 allocs/op
+> 10000 177058 ns/op 3324 B/op 68 allocs/op
 
 It is clear that accessing a single row, column is way faster and requires much less allocations than the denormalized approach.
 
@@ -162,11 +161,11 @@ It is clear that accessing a single row, column is way faster and requires much 
 
 Updating a single row column in the denormalized approach
 
-> 300	   4154761 ns/op	 1226859 B/op	    9955 allocs/op
+> 300 4154761 ns/op 1226859 B/op 9955 allocs/op
 
 Updating a single row column in the normalized approach
 
-> 1000	   1636261 ns/op	    2326 B/op	      54 allocs/op
+> 1000 1636261 ns/op 2326 B/op 54 allocs/op
 
 Updating a single row column in the normalized approach is way faster as well and requires much less allocations than the denormalized approach.
 
@@ -176,19 +175,20 @@ While game creation is incredibly fast with the array approach, retrieving and u
 
 If I have to choose between faster game creations or faster game update, I choose the later thus concluding that the denormalized approach is discarded and I don't think that attempting to improve updates with arrays is going to pay off.
 
-
-
 ## TODO
 
 - [x] Analyze and write down the solution specification.
 - [x] Write the database schema
-- [x] Implement the *minesweep algebra* in the backend (GO).
+- [x] Implement the _minesweep algebra_ in the backend (GO).
 - [x] Write the skeleton API
 - [x] Implement authentication.
 - [x] Implement the game backend API and benchmark the normalized and denormalized approach.
 - [x] Apply the minesweep algebra to the game (game operations) and finish the project's backend.
-- [ ] Create a login page in the frontend.
-- [ ] Implement the *minesweep algebra* in javascript.
-- [ ] Implement a client for the backend API.
-- [ ] Create the game board in the frontend using the client backend API.
+- [x] Create a login page in the frontend.
+- [x] Implement the _minesweep algebra_ in javascript.
+- [x] Implement a client for the backend API.
+- [x] Create the game board in the frontend using the client backend API.
+- [x] Add request validation unit test.
+- [ ] Add user creation form
+- [ ] Release v1.0.0
 - [ ] auto reveal 0 mines
