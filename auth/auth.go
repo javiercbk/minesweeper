@@ -27,7 +27,7 @@ func NewHandler(logger *log.Logger, db *sql.DB) Handler {
 
 // Routes initializes all the routes with their http handlers
 func (h Handler) Routes(e *echo.Group, jwtSecret string) {
-	e.POST("/", h.AuthenticateFactory(jwtSecret))
+	e.POST("", h.AuthenticateFactory(jwtSecret))
 }
 
 // AuthenticateFactory creates the http handler for the login

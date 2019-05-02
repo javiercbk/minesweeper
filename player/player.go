@@ -37,7 +37,7 @@ func NewHandler(logger *log.Logger, db *sql.DB) Handler {
 
 // Routes initializes all the routes with their http handlers
 func (h Handler) Routes(e *echo.Group, jwtMiddleware echo.MiddlewareFunc) {
-	e.POST("/", h.Create)
+	e.POST("", h.Create)
 	e.GET("/current", h.RetrieveCurrent, jwtMiddleware)
 }
 

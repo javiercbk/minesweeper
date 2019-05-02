@@ -1,10 +1,13 @@
+import { mapActions } from "vuex";
 import MsUserForm from "@/components/forms/user/ms-user-form.vue";
 import AuthService from "@/services/auth-service";
-import { mapActions } from "vuex";
 
 const authService = new AuthService();
 
 export default {
+  components: {
+    MsUserForm
+  },
   methods: {
     ...mapActions("session", ["setUser", "setJWTToken"]),
     ...mapActions("notifications", ["pushNotification"]),
@@ -33,28 +36,5 @@ export default {
           }
         });
     }
-  },
-  render(h) {
-    h(
-      "div",
-      {
-        class: "container"
-      },
-      [
-        h(
-          "div",
-          {
-            class: "row"
-          },
-          [
-            h(MsUserForm, {
-              on: {
-                "user-submit": this.handleUserLogin
-              }
-            })
-          ]
-        )
-      ]
-    );
   }
 };

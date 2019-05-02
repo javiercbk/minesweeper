@@ -71,7 +71,7 @@ func (api api) CreateToken(ctx context.Context, jwtSecret string, auth Credentia
 		// To mitigate this risk, I perform a bcrypt comparison but I discard the result because I only want the request
 		// latency to be incremented. I cannot simply time.Sleep() because the bcrypt time varies between CPUs.
 		// We also need to protect the service from a DoS, but that would be a job for some other proxy server.
-		bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(auth.Password))
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(auth.Password))
 		return tResponse, ErrBadCredentials
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(player.Password), []byte(auth.Password))

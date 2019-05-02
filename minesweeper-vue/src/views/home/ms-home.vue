@@ -1,9 +1,6 @@
 <template>
-  <div class="container-fluid p-0">
-    <ms-top-bar/>
-    <div class="container">
-      <router-view/>
-    </div>
+  <div class="container">
+    <h1>Minesweeper</h1>
   </div>
 </template>
 

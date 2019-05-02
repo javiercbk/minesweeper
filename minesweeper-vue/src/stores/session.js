@@ -71,7 +71,10 @@ const actions = {
       .then(body => {
         commit("setUser", body.user);
       })
-      .catch(() => {
+      .catch(err => {
+        if (err.status !== 401) {
+          console.log(JSON.stringify(err));
+        }
         // if it fails, do nothing
       })
       .finally(() => commit("setUserRequested", true));

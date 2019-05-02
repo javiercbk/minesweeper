@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import App from "@/minesweeper-app.vue";
 import router from "@/router";
 import store from "@/store";
+import TransparentDirective from "@/directives/ms-transparent.js";
 
 window.Promise = Promise;
 
@@ -34,6 +35,8 @@ Vue.component("font-awesome-icon", FontAwesomeIcon);
 Vue.config.productionTip = false;
 
 Vue.use(Vuelidate);
+
+Vue.directive("transparent", TransparentDirective);
 
 new Vue({
   router,

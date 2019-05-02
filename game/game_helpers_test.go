@@ -197,7 +197,7 @@ func assertStatus(s1, s2 Status) error {
 	if s1.Cols != s2.Cols {
 		return fmt.Errorf("expected status Cols to be %v but was %v", s1.Cols, s2.Cols)
 	}
-	if len(s1.Board) != len(s1.Board) {
+	if len(s1.Board) != len(s2.Board) {
 		return fmt.Errorf("expected status Board to be %v but was %v", s1.Board, s2.Board)
 	}
 	for r := range s1.Board {

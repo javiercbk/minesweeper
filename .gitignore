@@ -12,5 +12,7 @@
 *.out
 
 # exclude everything volatile folder
-postgres/data
-./server
+/postgres/data
+/server
+/server.log
+
