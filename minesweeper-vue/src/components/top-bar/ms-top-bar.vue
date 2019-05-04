@@ -4,7 +4,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active" :class="{'active': isGameCreation}">
-          <router-link class="navbar-brand" :to="{name: 'game-search-create'}">
+          <router-link class="navbar-brand" :to="{name: 'index'}">
             Games
             <span v-if="isGameCreation" class="sr-only">current</span>
           </router-link>

@@ -35,7 +35,9 @@ export default {
       return typeof this.mineProximity === "string";
     },
     mineProximityClass() {
-      if (this.mineProximity !== null && this.mineProximity < 9) {
+      if (this.mineProximity === null) {
+        return "mine-unrevealed";
+      } else if (this.mineProximity < 9) {
         return `mine-${this.mineProximity}`;
       }
     }

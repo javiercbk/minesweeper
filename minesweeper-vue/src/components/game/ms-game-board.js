@@ -1,3 +1,4 @@
+import MsBoardTile from "./ms-board-tile.vue";
 import {
   faSmile,
   faSurprise,
@@ -9,6 +10,9 @@ export const OP_REVEAL = 1;
 export const OP_MARK = 2;
 
 export default {
+  components: {
+    MsBoardTile
+  },
   props: {
     board: {
       type: Array,
@@ -40,16 +44,16 @@ export default {
       this.mouseDown = true;
     },
     onMouseUp() {
-      this.mouseFalse = true;
+      this.mouseDown = false;
     },
     sendMarkCommand(data) {
-      this._sendCommand(data.row, data.col, OP_MARK);
+      this._sendOperation(data.row, data.col, OP_MARK);
     },
     sendRevealCommand(data) {
-      this._sendCommand(data.row, data.col, OP_REVEAL);
+      this._sendOperation(data.row, data.col, OP_REVEAL);
     },
-    _sendCommand(row, col, op) {
-      this.$emit("command", {
+    _sendOperation(row, col, op) {
+      this.$emit("operation", {
         row: row,
         col: col,
         op: op

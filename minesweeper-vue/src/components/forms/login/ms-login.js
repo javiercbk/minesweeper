@@ -9,7 +9,7 @@ export default {
     MsUserForm
   },
   methods: {
-    ...mapActions("session", ["setUser", "setJWTToken"]),
+    ...mapActions("session", ["setUser", "setjwtToken"]),
     ...mapActions("notifications", ["pushNotification"]),
     handleUserLogin(credentials) {
       authService
@@ -17,7 +17,7 @@ export default {
         .then(res => res.json())
         .then(body => {
           // store the user info
-          this.setJWTToken(body.data.token);
+          this.setjwtToken(body.data.token);
           this.setUser(body.data.user);
         })
         .catch(res => {

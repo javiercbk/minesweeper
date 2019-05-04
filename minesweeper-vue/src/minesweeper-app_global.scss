@@ -21,6 +21,10 @@ body {
   cursor: pointer;
 }
 
+.f-grow {
+  flex-grow: 1;
+}
+
 .minesweeper-transparent {
   opacity: 0;
 }

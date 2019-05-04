@@ -49,7 +49,7 @@
       <input type="checkbox" class="form-check-input" id="game-private" v-model="$v.private.$model">
       <label class="form-check-label" for="game-private">Private game</label>
     </div>
-    <button type="submit" class="btn btn-primary" :disabled="$v.invalid || disabled>Submit</button>
+    <button type="submit" class="btn btn-primary" :disabled="$v.invalid || disabled">Submit</button>
   </form>
 </template>
 
