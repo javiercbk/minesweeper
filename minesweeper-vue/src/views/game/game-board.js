@@ -22,7 +22,7 @@ export default {
   },
   props: {
     entityId: {
-      type: Number,
+      type: [String, Number],
       required: true
     }
   },
@@ -46,6 +46,13 @@ export default {
     };
   },
   computed: {
+    gameId() {
+      let id = parseInt(this.entityId, 10);
+      if (_.isNaN(id)) {
+        id = null;
+      }
+      return id;
+    },
     gameStatus() {
       if (!_.isNil(this.game.finishedAt)) {
         if (this.game.won) {
@@ -60,12 +67,24 @@ export default {
   methods: {
     ...mapActions("notifications", ["pushNotification"]),
     retrieveGame() {
+      const id = parseInt(this.entityId, 10);
+      if (_.isNaN(id)) {
+        this.pushNotification({
+          title: "Error",
+          message: "The game does not exist",
+          variant: "danger"
+        });
+        return;
+      }
       this.loadingGame = true;
       gameService
         .retrieve(this.entityId)
         .then(res => res.json())
         .then(body => {
           this.game = body.data.game;
+          if (_.isNil(this.game.latestOperationId)) {
+            this.game.latestOperationId = 0;
+          }
         })
         .catch(() => {
           this.pushNotification({
@@ -80,9 +99,10 @@ export default {
     },
     onOperation(operation) {
       this.synchronizing = true;
-      operation.id = this.latestOperationId + 1;
+      operation.id = this.game.latestOperationId + 1;
+      operation.gameId = this.gameId;
       gameService
-        .applyOperation(operation)
+        .patch(operation)
         .then(res => res.json())
         .then(body => {
           this._processConfirmation(body.data.confirmation);
@@ -99,36 +119,38 @@ export default {
         });
     },
     _processConfirmation(confirmation) {
-      let latestOperationId = this.latestOperationId;
+      let latestOperationId = this.game.latestOperationId;
       let boardChanged = false;
       const board = _.cloneDeep(this.game.board);
-      const applyOperation = function(r, id) {
-        const { row, col, mineProximity, pointState } = r;
-        if (!_.isNil(id) && id > latestOperationId) {
-          latestOperationId = id;
-        }
-        if (pointState === STATE_SUSPECT_MINE && board[row][col] !== "?") {
-          boardChanged = true;
-          board[row][col] = "?";
-        } else if (
-          pointState === STATE_MARKED_MINE &&
-          board[row][col] !== "!"
-        ) {
-          boardChanged = true;
-          board[row][col] = "!";
-        } else if (
-          pointState === STATE_REVEALED &&
-          typeof board[row][col] !== "number"
-        ) {
-          boardChanged = true;
-          board[row][col] = mineProximity;
-        } else if (
-          pointState === STATE_NOT_REVEALED &&
-          board[row][col] !== null
-        ) {
-          boardChanged = true;
-          board[row][col] = null;
-        }
+      const applyOperation = function(id) {
+        return function(r) {
+          const { row, col, mineProximity, pointState } = r;
+          if (!_.isNil(id) && id > latestOperationId) {
+            latestOperationId = id;
+          }
+          if (pointState === STATE_SUSPECT_MINE && board[row][col] !== "?") {
+            boardChanged = true;
+            board[row][col] = "?";
+          } else if (
+            pointState === STATE_MARKED_MINE &&
+            board[row][col] !== "!"
+          ) {
+            boardChanged = true;
+            board[row][col] = "!";
+          } else if (
+            pointState === STATE_REVEALED &&
+            typeof board[row][col] !== "number"
+          ) {
+            boardChanged = true;
+            board[row][col] = mineProximity;
+          } else if (
+            pointState === STATE_NOT_REVEALED &&
+            board[row][col] !== null
+          ) {
+            boardChanged = true;
+            board[row][col] = null;
+          }
+        };
       };
       const newStatus = _.get(confirmation, "status", DEFAULT_STATUS);
       const operationId = _.get(confirmation, "operation.id", 0);
@@ -143,18 +165,19 @@ export default {
           newStatus,
           "finishedAt".moment.utc().format()
         );
+        this.game.board = newStatus.board;
       }
-      _.forEach(opResults, applyOperation());
+      _.forEach(opResults, applyOperation(operationId));
       _.forEach(deltaOperations, d => {
         const deltaResult = _.get(d, "result", []);
         _.forEach(deltaResult, r => {
-          applyOperation(r, d.id);
+          applyOperation(d.id)(r);
         });
       });
       if (boardChanged) {
         this.game.board = board;
       }
-      this.latestOperationId = latestOperationId;
+      this.game.latestOperationId = latestOperationId;
     }
   }
 };

@@ -9,7 +9,6 @@ import (
 
 	"github.com/javiercbk/minesweeper/http/response"
 	"github.com/javiercbk/minesweeper/http/security"
-	"github.com/javiercbk/minesweeper/models"
 	"github.com/labstack/echo"
 )
 
@@ -25,7 +24,7 @@ type cResponse struct {
 }
 
 type gsResponse struct {
-	Games models.GameSlice `json:"games"`
+	Games []StatefulGame `json:"games"`
 }
 
 type sgResponse struct {

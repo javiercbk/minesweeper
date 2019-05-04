@@ -5,11 +5,11 @@ import store from "@/store";
 export const jsonRequest = function(options) {
   const fetchOptions = {
     headers: {
-      accept: "application/json"
+      Accept: "application/json"
     }
   };
   if (_.get(options, "withBody")) {
-    fetchOptions.headers["content-type"] = "application/json";
+    fetchOptions.headers["Content-Type"] = "application/json";
   }
   return fetchOptions;
 };
@@ -21,7 +21,7 @@ export const getAuthHeaders = function() {
   }
   return {
     headers: {
-      authentication: `bearer ${token}`
+      authorization: `Bearer ${token}`
     }
   };
 };

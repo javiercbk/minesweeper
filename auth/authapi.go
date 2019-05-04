@@ -53,7 +53,8 @@ type Credentials struct {
 
 // TokenResponse contains a jwt token
 type TokenResponse struct {
-	Token string `json:"token"`
+	User  security.JWTUser `json:"user"`
+	Token string           `json:"token"`
 }
 
 // CreateToken creates an authentication token that can be used to authenticate with the rest api
@@ -92,5 +93,7 @@ func (api api) CreateToken(ctx context.Context, jwtSecret string, auth Credentia
 		return tResponse, errors.New("error creating token")
 	}
 	tResponse.Token = t
+	tResponse.User.ID = player.ID
+	tResponse.User.Name = player.Name
 	return tResponse, nil
 }

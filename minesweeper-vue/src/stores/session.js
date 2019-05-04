@@ -69,7 +69,7 @@ const actions = {
       .getCurrentUser()
       .then(response => response.json())
       .then(body => {
-        commit("setUser", body.user);
+        commit("setUser", body.data.user);
       })
       .catch(err => {
         if (err.status !== 401) {

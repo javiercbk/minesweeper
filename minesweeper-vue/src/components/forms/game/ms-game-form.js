@@ -38,6 +38,9 @@ export default {
         }
         return false;
       }
+    },
+    private: {
+      required
     }
   },
 

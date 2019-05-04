@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid p-0">
+  <div class="container">
     <div class="row">
       <h1>Games</h1>
       <hr>
@@ -28,3 +28,5 @@
     </div>
   </div>
 </template>
+
+<script src="./game-search-create.js"></script>

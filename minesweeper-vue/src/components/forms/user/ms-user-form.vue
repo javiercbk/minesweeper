@@ -5,15 +5,12 @@
       <input
         type="text"
         class="form-control"
-        :class="{'is-valid': usernameValid, 'is-invalid': usernameInvalidDirty}"
+        :class="{'is-valid': nameValid, 'is-invalid': nameInvalidDirty}"
         id="login-name"
         v-model="$v.name.$model"
         :disabled="disabled"
       >
-      <div
-        v-transparent="!usernameInvalidDirty"
-        class="invalid-feedback d-block"
-      >Username is mandatory</div>
+      <div v-transparent="!nameInvalidDirty" class="invalid-feedback d-block">Username is mandatory</div>
     </div>
     <div class="form-group">
       <label for="login-password">Password</label>

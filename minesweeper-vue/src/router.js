@@ -5,8 +5,6 @@ import store from "./store";
 
 Vue.use(Router);
 
-const GameSearchCreate = () =>
-  import(/* webpackChunkName: 'game' */ "./views/game/game-search-create.vue");
 const GameBoard = () =>
   import(/* webpackChunkName: 'game' */ "./views/game/game-board.vue");
 const PlayerCreate = () =>
@@ -31,11 +29,6 @@ const router = new Router({
       meta: {
         public: true
       }
-    },
-    {
-      path: "/games",
-      name: "game-seach-create",
-      component: GameSearchCreate
     },
     {
       path: "/games/:entityId",

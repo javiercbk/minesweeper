@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { jsonRequest, authenticatedRequest } from "./service-helpers";
 
 export default class AuthService {
@@ -5,7 +6,7 @@ export default class AuthService {
     return authenticatedRequest(authHeaders =>
       fetch(
         "/api/players/current",
-        Object.assign(jsonRequest(), authHeaders, {
+        _.merge(jsonRequest(), authHeaders, {
           method: "GET"
         })
       )
@@ -15,7 +16,7 @@ export default class AuthService {
   authenticate(credentials) {
     return fetch(
       "/api/auth",
-      Object.assign(jsonRequest({ withBody: true }), {
+      _.merge(jsonRequest({ withBody: true }), {
         method: "POST",
         body: JSON.stringify(credentials)
       })

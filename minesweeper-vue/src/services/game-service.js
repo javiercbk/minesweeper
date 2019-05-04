@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { jsonRequest, authenticatedRequest } from "./service-helpers";
 
 export default class GameService {
@@ -5,7 +6,7 @@ export default class GameService {
     return authenticatedRequest(authHeaders =>
       fetch(
         "/api/games",
-        Object.assign(jsonRequest(), authHeaders, {
+        _.merge(jsonRequest(), authHeaders, {
           method: "GET"
         })
       )
@@ -17,7 +18,7 @@ export default class GameService {
     return authenticatedRequest(authHeaders =>
       fetch(
         `/api/games/${escapedGameId}`,
-        Object.assign(jsonRequest(), authHeaders, {
+        _.merge({}, jsonRequest(), authHeaders, {
           method: "GET"
         })
       )
@@ -28,10 +29,32 @@ export default class GameService {
     return authenticatedRequest(authHeaders =>
       fetch(
         "/api/games",
-        Object.assign(jsonRequest({ withBody: true }), authHeaders, {
-          method: "POST",
-          body: JSON.stringify(game)
-        })
+        _.merge(
+          {},
+          jsonRequest({ withBody: true }),
+          {
+            method: "POST",
+            body: JSON.stringify(game)
+          },
+          authHeaders
+        )
+      )
+    );
+  }
+
+  patch(operation) {
+    return authenticatedRequest(authHeaders =>
+      fetch(
+        `/api/games/${encodeURIComponent(operation.gameId)}`,
+        _.merge(
+          {},
+          jsonRequest({ withBody: true }),
+          {
+            method: "PATCH",
+            body: JSON.stringify(operation)
+          },
+          authHeaders
+        )
       )
     );
   }

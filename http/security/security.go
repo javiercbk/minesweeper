@@ -52,7 +52,7 @@ func JWTDecode(c echo.Context) (JWTUser, error) {
 		err = ErrUserNotFound
 	} else {
 		claims := user.Claims.(jwt.MapClaims)
-		jwtUser.ID = claims[userID].(int64)
+		jwtUser.ID = int64(claims[userID].(float64))
 		jwtUser.Name = claims[userName].(string)
 	}
 	return jwtUser, err

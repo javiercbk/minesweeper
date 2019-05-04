@@ -71,7 +71,7 @@ type ProspectGame struct {
 	Rows    int   `json:"rows" validate:"required,gte=0,lt=100"`
 	Cols    int   `json:"cols" validate:"required,gte=0,lt=100"`
 	Mines   int   `json:"mines" validate:"required,gt=0"`
-	Private bool  `json:"private" validate:"required"`
+	Private bool  `json:"private"`
 }
 
 // OperationResult is the result of an minesweeper algebra operation application
@@ -86,9 +86,9 @@ type OperationResult struct {
 type Operation struct {
 	ID      int                   `json:"id" validate:"required"`
 	GameID  int64                 `json:"gameId" validate:"required"`
-	Op      algebra.OperationType `json:"op" validate:"required,1|2"`
-	Row     int                   `json:"row" validate:"required,gte=0,lt=100"`
-	Col     int                   `json:"col" validate:"required,gte=0,lt=100"`
+	Op      algebra.OperationType `json:"op" validate:"required,eq=1|eq=2"`
+	Row     int                   `json:"row" validate:"gte=0,lt=100"`
+	Col     int                   `json:"col" validate:"gte=0,lt=100"`
 	Applied bool                  `json:"applied"`
 	Result  []OperationResult     `json:"result,omitempty"`
 }
@@ -126,8 +126,8 @@ type StatefulGame struct {
 	StartedAt       null.Time    `boil:"started_at" json:"startedAt,omitempty"`
 	FinishedAt      null.Time    `boil:"finished_at" json:"finishedAt,omitempty"`
 	Won             null.Bool    `boil:"won" json:"won,omitempty"`
-	Creator         Creator      `boil:",bind"`
-	LastOperationID int          `boil:"last_operation_id" json:"lastOperationId"`
+	Creator         Creator      `boil:",bind" json:"creator"`
+	LastOperationID null.Int     `boil:"last_operation_id" json:"lastOperationId"`
 	Board           [][]null.Int `json:"board"`
 }
 
@@ -135,7 +135,7 @@ type StatefulGame struct {
 type API interface {
 	CreateGame(ctx context.Context, user security.JWTUser, pGame *ProspectGame) error
 	ApplyOperation(ctx context.Context, user security.JWTUser, oper Operation) (OperationConfirmation, error)
-	FindGames(ctx context.Context, user security.JWTUser) (models.GameSlice, error)
+	FindGames(ctx context.Context, user security.JWTUser) ([]StatefulGame, error)
 	RetrieveGame(ctx context.Context, user security.JWTUser, id int64) (StatefulGame, error)
 }
 
@@ -164,10 +164,18 @@ type board struct {
 	board [][]int
 }
 
-func (api api) FindGames(ctx context.Context, user security.JWTUser) (models.GameSlice, error) {
-	return models.Games(
-		qm.Where("(private = false OR creator_id = ?) AND finished_at IS NULL", user.ID),
-	).All(ctx, api.db)
+func (api api) FindGames(ctx context.Context, user security.JWTUser) ([]StatefulGame, error) {
+	statefulGames := []StatefulGame{}
+	err := queries.Raw(`
+		SELECT g.id as "id", g.private as "private",
+		g.rows as "rows", g.cols as "cols",
+		g.mines as "mines", g.started_at as "started_at",
+		g.finished_at as "finished_at", g.won as "won",
+		p.id as "players.id", p.name as "players.name"
+		FROM games g INNER JOIN players p on g.creator_id = p.id
+		WHERE (g.private = false OR g.creator_id = $1)`, user.ID,
+	).Bind(ctx, api.db, &statefulGames)
+	return statefulGames, err
 }
 
 func (api api) RetrieveGame(ctx context.Context, user security.JWTUser, id int64) (StatefulGame, error) {
@@ -180,13 +188,13 @@ func (api api) RetrieveGame(ctx context.Context, user security.JWTUser, id int64
 		p.id as "players.id", p.name as "players.name",
 		go.operation_id as "last_operation_id"
 		FROM games g INNER JOIN players p on g.creator_id = p.id
-		INNER JOIN game_operations go ON go.game_id = g.id
+		LEFT OUTER JOIN game_operations go ON go.game_id = g.id
 		WHERE g.id = $1 AND (g.private = false OR g.creator_id = $2)
-		AND go.operation_id = (
+		AND (go.operation_id IS NULL OR go.operation_id = (
 			SELECT MAX(o.operation_id)
 			FROM game_operations o
 			WHERE game_id = g.id
-		)`, id, user.ID,
+		))`, id, user.ID,
 	).Bind(ctx, api.db, &statefulGame)
 	if err != nil {
 		if err == sql.ErrNoRows {
